@@ -17,29 +17,12 @@
  * under the License.
  */
 
-import {defaultFormatWithTZ, moment} from './datetime-utils';
-
-function displayTime() {
-  let utcTime = moment().utc().format(defaultFormatWithTZ);
-  const hostName = getMetaValue('host-name');
-  $('#clock')
-    .attr("data-original-title", function() {
-      return hostName
-    })
-    .html(utcTime);
-
-  setTimeout(displayTime, 1000);
+function getMetaValue(name) {
+  const el = document.querySelector('meta[name="' + name + '"]')
+  if (!el) {
+    return
+  }
+  return el.getAttribute("content")
 }
 
-$(document).ready(function () {
-  displayTime();
-  const csrfToken = getMetaValue('csrf-token');
-  $('span').tooltip();
-  $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-      if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-        xhr.setRequestHeader("X-CSRFToken", csrfToken);
-      }
-    }
-  });
-});
+global.getMetaValue = getMetaValue

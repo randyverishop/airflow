@@ -18,6 +18,11 @@
 {% extends "airflow/dag.html" %}
 {% block title %}Airflow - DAGs{% endblock %}
 
+{% block head_css %}
+  {{ super() }}
+  <meta name="demo-mode" content="{{ demo_mode }}">
+{% endblock %}
+
 {% block content %}
     {{ super() }}
     <h4>{{ title }}</h4>
@@ -25,11 +30,13 @@
 {% endblock %}
 
 {% block tail %}
+    <script src="{{ url_for_asset('utils.js') }}"></script>
     {{ super() }}
     <script>
+    const DEMO_MODE = getMetaValue('demo-mode');
       // We blur task_ids in demo mode
     $( document ).ready(function() {
-      if ("{{ demo_mode }}" == "True") {
+      if (DEMO_MODE == "True") {
           $("pre span.s").css({
               'text-shadow': '0px 0px 10px red',
               'color': 'transparent',
