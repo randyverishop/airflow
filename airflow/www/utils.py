@@ -347,6 +347,16 @@ def get_attr_renderer():
     }
 
 
+def render_attrs(task):
+    attrs_rendered = {}
+    for attr_name in get_attr_renderer():
+        if hasattr(task, attr_name):
+            source = getattr(task, attr_name)
+            attrs_rendered[attr_name] = \
+                get_attr_renderer()[attr_name](source)
+    return attrs_rendered
+
+
 def recurse_tasks(tasks, task_ids, dag_ids, task_id_to_dag):
     if isinstance(tasks, list):
         for task in tasks:

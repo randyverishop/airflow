@@ -54,7 +54,7 @@ def conditionally_trigger(context, dag_run_obj):
 
 # Define the DAG
 dag = DAG(
-    dag_id='example_trigger_controller_dag',
+    dag_id='example_trigger_controller',
     default_args={
         "owner": "airflow",
         "start_date": datetime.utcnow(),

@@ -430,7 +430,7 @@ class AirflowSecurityManager(SecurityManager, LoggingMixin):
 
         for role in dag_role:
             # Get all the perm-view of the role
-            existing_perm_view_by_user = self.get_session.query(ab_perm_view_role)\
+            existing_perm_view_by_user = self.get_session.query(ab_perm_view_role) \
                 .filter(ab_perm_view_role.columns.role_id == role.id)
 
             existing_perms_views = set([pv.permission_view_id

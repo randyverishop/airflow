@@ -21,6 +21,7 @@ import airflow
 from airflow.exceptions import AirflowSkipException
 from airflow.models import DAG
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.utils.trigger_rule import TriggerRule
 
 args = {
     'owner': 'airflow',
@@ -48,5 +49,5 @@ def create_test_pipeline(suffix, trigger_rule, dag):
 
 
 dag = DAG(dag_id='example_skip_dag', default_args=args)
-create_test_pipeline('1', 'all_success', dag)
-create_test_pipeline('2', 'one_success', dag)
+create_test_pipeline('1', TriggerRule.ALL_SUCCESS, dag)
+create_test_pipeline('2', TriggerRule.ONE_SUCCESS, dag)

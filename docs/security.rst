@@ -449,14 +449,14 @@ Viewer
 ^^^^^^
 ``Viewer`` users have limited viewer permissions
 
-.. exampleinclude:: ../airflow/www/security.py
+.. literalinclude:: ../airflow/www/security.py
     :language: python
     :start-after: [START security_viewer_perms]
     :end-before: [END security_viewer_perms]
 
 on limited web views
 
-.. exampleinclude:: ../airflow/www/security.py
+.. literalinclude:: ../airflow/www/security.py
     :language: python
     :start-after: [START security_viewer_vms]
     :end-before: [END security_viewer_vms]
@@ -466,10 +466,11 @@ User
 ^^^^
 ``User`` users have ``Viewer`` permissions plus additional user permissions
 
-.. exampleinclude:: ../airflow/www/security.py
+.. literalinclude:: ../airflow/www/security.py
     :language: python
     :start-after: [START security_user_perms]
     :end-before: [END security_user_perms]
+
 
 on User web views which is the same as Viewer web views.
 
@@ -477,18 +478,18 @@ Op
 ^^
 ``Op`` users have ``User`` permissions plus additional op permissions
 
-.. exampleinclude:: ../airflow/www/security.py
+.. literalinclude:: ../airflow/www/security.py
     :language: python
     :start-after: [START security_op_perms]
     :end-before: [END security_op_perms]
 
+
 on ``User`` web views plus these additional op web views
 
-.. exampleinclude:: ../airflow/www/security.py
+.. literalinclude:: ..//airflow/www/security.py
     :language: python
     :start-after: [START security_op_vms]
     :end-before: [END security_op_vms]
-
 
 Custom Roles
 '''''''''''''

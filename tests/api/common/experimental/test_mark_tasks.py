@@ -299,7 +299,7 @@ class TestMarkDAGRun(unittest.TestCase):
         altered = set_dag_run_state_to_success(self.dag1, date, commit=True)
 
         # All except the SUCCESS task should be altered.
-        self.assertEqual(len(altered), 5)
+        self.assertEqual(len(altered), 6)
         self._verify_dag_run_state(self.dag1, date, State.SUCCESS)
         self._verify_task_instance_states(self.dag1, date, State.SUCCESS)
         self._verify_dag_run_dates(self.dag1, date, State.SUCCESS, middle_time)
@@ -341,7 +341,7 @@ class TestMarkDAGRun(unittest.TestCase):
         altered = set_dag_run_state_to_success(self.dag1, date, commit=True)
 
         # All except the SUCCESS task should be altered.
-        self.assertEqual(len(altered), 5)
+        self.assertEqual(len(altered), 6)
         self._verify_dag_run_state(self.dag1, date, State.SUCCESS)
         self._verify_task_instance_states(self.dag1, date, State.SUCCESS)
         self._verify_dag_run_dates(self.dag1, date, State.SUCCESS, middle_time)
@@ -383,7 +383,7 @@ class TestMarkDAGRun(unittest.TestCase):
         altered = set_dag_run_state_to_success(self.dag1, date, commit=True)
 
         # All except the SUCCESS task should be altered.
-        self.assertEqual(len(altered), 5)
+        self.assertEqual(len(altered), 6)
         self._verify_dag_run_state(self.dag1, date, State.SUCCESS)
         self._verify_task_instance_states(self.dag1, date, State.SUCCESS)
         self._verify_dag_run_dates(self.dag1, date, State.SUCCESS, middle_time)
@@ -440,7 +440,7 @@ class TestMarkDAGRun(unittest.TestCase):
         will_be_altered = set_dag_run_state_to_success(self.dag1, date, commit=False)
 
         # All except the SUCCESS task should be altered.
-        self.assertEqual(len(will_be_altered), 5)
+        self.assertEqual(len(will_be_altered), 6)
         self._verify_dag_run_state(self.dag1, date, State.RUNNING)
         self._verify_task_instance_states_remain_default(dr)
 

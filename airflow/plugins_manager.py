@@ -37,15 +37,25 @@ class AirflowPluginException(Exception):
     pass
 
 
+# [START plugins_interface]
 class AirflowPlugin:
+    # The name of your plugin (str)
     name = None  # type: str
+    # A list of class(es) derived from BaseOperator
     operators = []  # type: List[Any]
+    # A list of class(es) derived from BaseSensorOperator
     sensors = []  # type: List[Any]
+    # A list of class(es) derived from BaseHook
     hooks = []  # type: List[Any]
+    # A list of class(es) derived from BaseExecutor
     executors = []  # type: List[Any]
+    # A list of references to inject into the macros namespace
     macros = []  # type: List[Any]
+    # A list of Blueprint object created from flask.Blueprint. For use with the flask_appbuilder based GUI
     admin_views = []  # type: List[Any]
+    # A list of dictionaries containing FlaskAppBuilder BaseView object and some metadata. See example below
     flask_blueprints = []  # type: List[Any]
+    # A list of dictionaries containing FlaskAppBuilder BaseView object and some metadata. See example below
     menu_links = []  # type: List[Any]
     appbuilder_views = []  # type: List[Any]
     appbuilder_menu_items = []  # type: List[Any]
@@ -69,10 +79,15 @@ class AirflowPlugin:
         Executed when the plugin is loaded.
         This method is only called once during runtime.
 
+        Ensure your plugin has *args, and **kwargs in the method definition
+        to protect against extra parameters injected into the on_load(...)
+        function in future changes
+
         :param args: If future arguments are passed in on call.
         :param kwargs: If future arguments are passed in on call.
         """
         pass
+# [END plugins_interface]
 
 
 def load_entrypoint_plugins(entry_points, airflow_plugins):

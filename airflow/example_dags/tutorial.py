@@ -22,8 +22,10 @@
 Documentation that goes along with the Airflow tutorial located
 [here](https://airflow.apache.org/tutorial.html)
 """
+# [START tutorial_example_pipeline_definition]
 from datetime import timedelta
 
+# [START scheduler_backfill_and_catchup]
 import airflow
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
@@ -60,6 +62,7 @@ dag = DAG(
     description='A simple tutorial DAG',
     schedule_interval=timedelta(days=1),
 )
+# [END scheduler_backfill_and_catchup]
 
 # t1, t2 and t3 are examples of tasks created by instantiating operators
 t1 = BashOperator(
@@ -102,3 +105,4 @@ t3 = BashOperator(
 )
 
 t1 >> [t2, t3]
+# [END tutorial_example_pipeline_definition]

@@ -16,11 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""
-Example LatestOnlyOperator and TriggerRule interactions
-"""
-import datetime as dt
-
 import airflow
 from airflow.models import DAG
 from airflow.operators.dummy_operator import DummyOperator
@@ -28,8 +23,8 @@ from airflow.operators.latest_only_operator import LatestOnlyOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 dag = DAG(
-    dag_id='latest_only_with_trigger',
-    schedule_interval=dt.timedelta(hours=4),
+    dag_id='example_latest_only_with_trigger',
+    schedule_interval=None,
     start_date=airflow.utils.dates.days_ago(2),
 )
 

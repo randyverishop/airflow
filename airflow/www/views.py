@@ -66,6 +66,7 @@ from airflow.www.decorators import action_logging, gzipped, has_dag_access
 from airflow.www.forms import (DateTimeForm, DateTimeWithNumRunsForm,
                                DateTimeWithNumRunsWithDagRunsForm,
                                DagRunForm, ConnectionForm)
+from airflow.www.utils import render_attrs
 from airflow.www.widgets import AirflowModelListWidget
 
 
@@ -681,12 +682,7 @@ class Airflow(AirflowBaseView):
                     task_attrs.append((attr_name, str(attr)))
 
         # Color coding the special attributes that are code
-        special_attrs_rendered = {}
-        for attr_name in wwwutils.get_attr_renderer():
-            if hasattr(task, attr_name):
-                source = getattr(task, attr_name)
-                special_attrs_rendered[attr_name] = \
-                    wwwutils.get_attr_renderer()[attr_name](source)
+        special_attrs_rendered = render_attrs(task)
 
         no_failed_deps_result = [(
             "Unknown",

@@ -947,20 +947,11 @@ This is especially useful if your tasks are built dynamically from
 configuration files, it allows you to expose the configuration that led
 to the related tasks in Airflow.
 
-.. code:: python
+.. literalinclude:: ../airflow/example_dags/example_documentation.py
+    :language: python
+    :start-after: [START concepts_documentation]
+    :end-before: [END concepts_documentation]
 
-    """
-    ### My great DAG
-    """
-
-    dag = DAG('my_dag', default_args=default_args)
-    dag.doc_md = __doc__
-
-    t = BashOperator("foo", dag=dag)
-    t.doc_md = """\
-    #Title"
-    Here's a [url](www.airbnb.com)
-    """
 
 This content will get rendered as markdown respectively in the "Graph View" and
 "Task Details" pages.
@@ -977,15 +968,11 @@ powerful tool to use in combination with macros (see the :doc:`macros` section).
 For example, say you want to pass the execution date as an environment variable
 to a Bash script using the ``BashOperator``.
 
-.. code:: python
+.. literalinclude:: ../airflow/example_dags/example_bash_operator.py
+    :language: python
+    :start-after: [START concepts_jinja_templating]
+    :end-before: [END concepts_jinja_templating]
 
-  # The execution date as YYYY-MM-DD
-  date = "{{ ds }}"
-  t = BashOperator(
-      task_id='test_env',
-      bash_command='/tmp/test.sh ',
-      dag=dag,
-      env={'EXECUTION_DATE': date})
 
 Here, ``{{ ds }}`` is a macro, and because the ``env`` parameter of the
 ``BashOperator`` is templated with Jinja, the execution date will be available

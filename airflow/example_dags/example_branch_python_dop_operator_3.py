@@ -25,7 +25,7 @@ from airflow.operators.python_operator import BranchPythonOperator
 args = {
     'owner': 'airflow',
     'start_date': airflow.utils.dates.days_ago(2),
-    'depends_on_past': True,
+    'depends_on_past': False,
 }
 
 # BranchPython operator that depends on past
@@ -33,7 +33,7 @@ args = {
 # alternating runs
 dag = DAG(
     dag_id='example_branch_dop_operator_v3',
-    schedule_interval='*/1 * * * *',
+    schedule_interval='0 0 * * *',
     default_args=args,
 )
 

@@ -16,21 +16,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""
-Example of the LatestOnlyOperator
-"""
+
 import airflow
-from airflow.models import DAG
+from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.latest_only_operator import LatestOnlyOperator
 
-dag = DAG(
-    dag_id='example_latest_only',
-    schedule_interval=None,
-    start_date=airflow.utils.dates.days_ago(2),
-)
+default_args = {
+    'start_date': airflow.utils.dates.days_ago(2),
+    'owner': 'Airflow',
+}
 
-latest_only = LatestOnlyOperator(task_id='latest_only', dag=dag)
-task1 = DummyOperator(task_id='task1', dag=dag)
-
-latest_only >> task1
+dag = DAG('example_default_args', default_args=default_args, schedule_interval=None)
+op = DummyOperator(task_id='dummy', dag=dag)

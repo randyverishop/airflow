@@ -145,23 +145,10 @@ variable in the global namespace, which is easily done in python using the
 ``globals()`` function for the standard library which behaves like a
 simple dictionary.
 
-.. code:: python
-
-    def create_dag(dag_id):
-        """
-        A function returning a DAG object.
-        """
-
-        return DAG(dag_id)
-
-
-    for i in range(10):
-        dag_id = f'foo_{i}'
-        globals()[dag_id] = DAG(dag_id)
-
-        # or better, call a function that returns a DAG object!
-        other_dag_id = f'bar_{i}'
-        globals()[other_dag_id] = create_dag(other_dag_id)
+.. literalinclude:: ../airflow/example_dags/example_dynamic_dag.py
+    :language: python
+    :start-after: [START faq_dynamic_dag]
+    :end-before: [END faq_dynamic_dag]
 
 What are all the ``airflow run`` commands in my process list?
 ---------------------------------------------------------------
