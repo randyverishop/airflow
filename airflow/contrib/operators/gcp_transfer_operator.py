@@ -85,7 +85,7 @@ class TransferJobPreprocessor:
     def _restrict_aws_credentials(self):
         if 'transferSpec' in self.body and \
            'awsS3DataSource' in self.body['transferSpec'] and \
-           'aws_access_key' in self.body['transferSpec']['awsS3DataSource']:
+           'awsAccessKey' in self.body['transferSpec']['awsS3DataSource']:
             raise AirflowException("Credentials in body is not allowed. "
                                    "To store credentials, use connections.")
 
@@ -178,7 +178,7 @@ class GcpTransferServiceJobCreateOperator(BaseOperator):
     :rtype: dict
     """
     # [START gcp_transfer_job_create_template_fields]
-    template_fields = ('body', )
+    # template_fields = ('', )
     # [END gcp_transfer_job_create_template_fields]
 
     @apply_defaults
@@ -203,9 +203,9 @@ class GcpTransferServiceJobCreateOperator(BaseOperator):
     def _validate_inputs(self):
         self._preprocessor.validate_body()
 
-    @convert_http_exception
+    @convert_http_exception("SSS")
     def execute(self, context):
-        self.body = self._preprocessor.process_body()
+        self._preprocessor.process_body()
         hook = GCPTransferServiceHook(
             api_version=self.api_version,
             gcp_conn_id=self.gcp_conn_id,
@@ -708,12 +708,12 @@ class S3ToGoogleCloudStorageTransferOperator(BaseOperator):
         body = {
             "description": self.description,
             "status": GcpTransferJobsStatus.ENABLED,
-            "transfer_spec": {
-                'aws_s3_data_source': {
-                    'bucket_name': self.s3_bucket,
+            "transferSpec": {
+                'awsS3DataSource': {
+                    'bucketName': self.s3_bucket,
                 },
-                'gcs_data_sink': {
-                    'bucket_name': self.gcs_bucket,
+                'gcsDataSink': {
+                    'bucketName': self.gcs_bucket,
                 },
             }
         }
@@ -725,10 +725,10 @@ class S3ToGoogleCloudStorageTransferOperator(BaseOperator):
             body['schedule'] = self.schedule
 
         if self.object_conditions is not None:
-            body['transfer_spec']['object_conditions'] = self.object_conditions
+            body['transferSpec']['objectConditions'] = self.object_conditions
 
         if self.transfer_options is not None:
-            body['transfer_spec']['transfer_options'] = self.transfer_options
+            body['transferSpec']['transferOptions'] = self.transfer_options
 
         TransferJobPreprocessor(
             body=body,
@@ -844,12 +844,12 @@ class GoogleCloudStorageToGoogleCloudStorageTransferOperator(BaseOperator):
         body = {
             "description": self.description,
             "status": GcpTransferJobsStatus.ENABLED,
-            "transfer_spec": {
-                'gcs_data_source': {
-                    'bucket_name': self.source_bucket,
+            "transferSpec": {
+                'gcsDataSource': {
+                    'bucketName': self.source_bucket,
                 },
-                'gcs_data_sink': {
-                    'bucket_name': self.destination_bucket,
+                'gcsDataSink': {
+                    'bucketName': self.destination_bucket,
                 },
             }
         }

@@ -70,8 +70,8 @@ FILTER = {'job_names': [JOB_NAME]}
 
 AWS_ACCESS_KEY_ID = "test-key-1"
 AWS_ACCESS_SECRET = "test-secret-1"
-AWS_ACCESS_KEY = {'access_key_id': AWS_ACCESS_KEY_ID,
-                  'secret_access_key': AWS_ACCESS_SECRET}
+AWS_ACCESS_KEY = {'accessKeyId': AWS_ACCESS_KEY_ID,
+                  'secretAccessKey': AWS_ACCESS_SECRET}
 
 NATIVE_DATE = date(2018, 10, 15)
 DICT_DATE = {
@@ -86,53 +86,42 @@ DICT_TIME = {
     'seconds': 43,
 }
 SCHEDULE_NATIVE = {
-    'schedule_start_date': NATIVE_DATE,
-    'schedule_end_date': NATIVE_DATE,
-    'start_time_of_day': NATIVE_TIME,
+    'scheduleStartDate': NATIVE_DATE,
+    'scheduleEndDate': NATIVE_DATE,
+    'startTimeOfDay': NATIVE_TIME,
 }
 
 SCHEDULE_DICT = {
-    'schedule_start_date': {'day': 15, 'month': 10, 'year': 2018},
-    'schedule_end_date': {'day': 15, 'month': 10, 'year': 2018},
-    'start_time_of_day': {
+    'scheduleStartDate': {'day': 15, 'month': 10, 'year': 2018},
+    'scheduleEndDate': {'day': 15, 'month': 10, 'year': 2018},
+    'startTimeOfDay': {
         'hours': 11, 'minutes': 42, 'seconds': 43}
 }
 
-SOURCE_AWS = {"awsS3DataSource": {"bucket_name": AWS_BUCKET_NAME}}
-SOURCE_GCS = {"gcs_data_source": {"bucket_name": GCS_BUCKET_NAME}}
-SOURCE_HTTP = {"http_data_source": {"list_url": "http://example.com"}}
+SOURCE_AWS = {"awsS3DataSource": {"bucketName": AWS_BUCKET_NAME}}
+SOURCE_GCS = {"gcsDataSource": {"bucketName": GCS_BUCKET_NAME}}
+SOURCE_HTTP = {"httpDataSource": {"list_url": "http://example.com"}}
 
 VALID_TRANSFER_JOB_BASE = {
     "name": JOB_NAME,
     'description': DESCRIPTION,
     'status': 'ENABLED',
-    'schedule': SCHEDULE_NATIVE,
+    'schedule': SCHEDULE_DICT,
     'transferSpec': {
-        'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
+        'gcsDataSink': {'bucketName': GCS_BUCKET_NAME}
     }
 }
 VALID_TRANSFER_JOB_GCS = deepcopy(VALID_TRANSFER_JOB_BASE)
-VALID_TRANSFER_JOB_GCS['transferSpec'].update(SOURCE_GCS)
+VALID_TRANSFER_JOB_GCS['transferSpec'].update(deepcopy(SOURCE_GCS))
 VALID_TRANSFER_JOB_AWS = deepcopy(VALID_TRANSFER_JOB_BASE)
 VALID_TRANSFER_JOB_AWS['transferSpec'].update(deepcopy(SOURCE_AWS))
-
-VALID_TRANSFER_JOB_GCS = {
-    "name": JOB_NAME,
-    'description': DESCRIPTION,
-    'status': 'ENABLED',
-    'schedule': SCHEDULE_NATIVE,
-    'transferSpec': {
-        "gcs_data_source": {"bucket_name": GCS_BUCKET_NAME},
-        'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
-    }
-}
 
 VALID_TRANSFER_JOB_RAW = {
     'description': DESCRIPTION,
     'status': 'ENABLED',
     'schedule': SCHEDULE_DICT,
     'transferSpec': {
-        'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
+        'gcsDataSink': {'bucketName': GCS_BUCKET_NAME}
     }
 }
 
@@ -174,8 +163,8 @@ class TransferJobPreprocessorTest(unittest.TestCase):
                          ['awsS3DataSource']['awsAccessKey'], AWS_ACCESS_KEY)
 
     @parameterized.expand([
-        ('schedule_start_date',),
-        ('schedule_end_date',),
+        ('scheduleStartDate',),
+        ('scheduleEndDate',),
     ])
     def test_should_format_date_from_python_to_dict(self, field_attr):
         body = {
@@ -191,13 +180,13 @@ class TransferJobPreprocessorTest(unittest.TestCase):
     def test_should_format_time_from_python_to_dict(self):
         body = {
             'schedule': {
-                'start_time_of_day': NATIVE_TIME
+                'startTimeOfDay': NATIVE_TIME
             },
         }
         TransferJobPreprocessor(
             body=body
         ).process_body()
-        self.assertEqual(body['schedule']['start_time_of_day'], DICT_TIME)
+        self.assertEqual(body['schedule']['startTimeOfDay'], DICT_TIME)
 
     def test_should_raise_exception_when_encounters_aws_credentials(self):
         body = {
@@ -244,11 +233,12 @@ class TransferJobPreprocessorTest(unittest.TestCase):
 
 
 class GcpStorageTransferJobCreateOperatorTest(unittest.TestCase):
+
     @mock.patch('airflow.contrib.operators.'
                 'gcp_transfer_operator.GCPTransferServiceHook')
-    def test_job_create(self, mock_hook):
-        mock_hook.return_value\
-            .create_transfer_job.return_value = VALID_TRANSFER_JOB_GCS
+    def test_job_create_gcs(self, mock_hook):
+        mock_hook.return_value \
+            .create_transfer_job.return_value = VALID_TRANSFER_JOB_GCS_RAW
         body = deepcopy(VALID_TRANSFER_JOB_GCS)
         del(body['name'])
         op = GcpTransferServiceJobCreateOperator(
@@ -259,10 +249,31 @@ class GcpStorageTransferJobCreateOperatorTest(unittest.TestCase):
 
         mock_hook.assert_called_once_with(api_version='v1',
                                           gcp_conn_id='google_cloud_default')
+
         mock_hook.return_value.create_transfer_job.assert_called_once_with(
             body=VALID_TRANSFER_JOB_GCS_RAW
         )
-        self.assertEqual(result, VALID_TRANSFER_JOB_GCS)
+
+    @mock.patch('airflow.contrib.operators.'
+                'gcp_transfer_operator.GCPTransferServiceHook')
+    @mock.patch('airflow.contrib.operators.gcp_transfer_operator.AwsHook')
+    def test_job_create_aws(self, aws_hook, mock_hook):
+        aws_hook.return_value.get_credentials.return_value = \
+            Credentials(AWS_ACCESS_KEY_ID, AWS_ACCESS_SECRET, None)
+        body = deepcopy(VALID_TRANSFER_JOB_AWS)
+        del(body['name'])
+        op = GcpTransferServiceJobCreateOperator(
+            body=body,
+            task_id=TASK_ID
+        )
+        result = op.execute(None)
+
+        mock_hook.assert_called_once_with(api_version='v1',
+                                          gcp_conn_id='google_cloud_default')
+
+        mock_hook.return_value.create_transfer_job.assert_called_once_with(
+            body=VALID_TRANSFER_JOB_AWS_RAW
+        )
 
     @mock.patch('airflow.contrib.operators.'
                 'gcp_transfer_operator.GCPTransferServiceHook')
@@ -298,7 +309,7 @@ class GcpStorageTransferJobCreateOperatorTest(unittest.TestCase):
         }
         self.dag = DAG(dag_id, default_args=args)
         op = GcpTransferServiceJobCreateOperator(
-            body={"name": "{{ dag.dag_id }}"},
+            body={"description": "{{ dag.dag_id }}"},
             gcp_conn_id='{{ dag.dag_id }}',
             aws_conn_id='{{ dag.dag_id }}',
             task_id='task-id',
