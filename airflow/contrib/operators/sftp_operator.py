@@ -78,7 +78,7 @@ class SFTPOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  ssh_hook=None,
-                 ssh_conn_id=None,
+                 ssh_conn_id='sftp_default',
                  remote_host=None,
                  local_filepath=None,
                  remote_filepath=None,

@@ -57,7 +57,7 @@ class DiscordWebhookOperator(SimpleHttpOperator):
 
     @apply_defaults
     def __init__(self,
-                 http_conn_id=None,
+                 http_conn_id='discord_default',
                  webhook_endpoint=None,
                  message="",
                  username=None,

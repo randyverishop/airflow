@@ -64,7 +64,7 @@ class ECSOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self, task_definition, cluster, overrides,
-                 aws_conn_id=None, region_name=None, launch_type='EC2',
+                 aws_conn_id='aws_default', region_name=None, launch_type='EC2',
                  group=None, placement_constraints=None, platform_version='LATEST',
                  network_configuration=None, **kwargs):
         super(ECSOperator, self).__init__(**kwargs)

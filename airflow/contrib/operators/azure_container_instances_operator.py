@@ -107,9 +107,24 @@ class AzureContainerInstancesOperator(BaseOperator):
     template_fields = ('name', 'environment_variables')
 
     @apply_defaults
-    def __init__(self, ci_conn_id, registry_conn_id, resource_group, name, image, region,
-                 environment_variables=None, volumes=None, memory_in_gb=None, cpu=None,
-                 command=None, remove_on_error=True, fail_if_exists=True, *args, **kwargs):
+    def __init__(
+        self,
+        resource_group,
+        name,
+        image,
+        region,
+        registry_conn_id='azure_default',
+        ci_conn_id='azure_default',
+        environment_variables=None,
+        volumes=None,
+        memory_in_gb=None,
+        cpu=None,
+        command=None,
+        remove_on_error=True,
+        fail_if_exists=True,
+        *args,
+        **kwargs
+    ):
         super(AzureContainerInstancesOperator, self).__init__(*args, **kwargs)
 
         self.ci_conn_id = ci_conn_id

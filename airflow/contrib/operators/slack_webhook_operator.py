@@ -55,7 +55,7 @@ class SlackWebhookOperator(SimpleHttpOperator):
 
     @apply_defaults
     def __init__(self,
-                 http_conn_id=None,
+                 http_conn_id='slack_default',
                  webhook_token=None,
                  message="",
                  attachments=None,

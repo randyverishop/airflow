@@ -62,10 +62,10 @@ class OracleToAzureDataLakeTransfer(BaseOperator):
     def __init__(
             self,
             filename,
-            azure_data_lake_conn_id,
             azure_data_lake_path,
-            oracle_conn_id,
             sql,
+            oracle_conn_id='oracle_default',
+            azure_data_lake_conn_id='azure_default',
             sql_params=None,
             delimiter=",",
             encoding="utf-8",

@@ -105,8 +105,8 @@ class JenkinsJobTriggerOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 jenkins_connection_id,
                  job_name,
+                 jenkins_connection_id='jenking_default',
                  parameters="",
                  sleep_time=10,
                  max_try_before_job_appears=10,

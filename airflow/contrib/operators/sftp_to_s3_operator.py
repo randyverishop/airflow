@@ -54,7 +54,7 @@ class SFTPToS3Operator(BaseOperator):
                  s3_bucket,
                  s3_key,
                  sftp_path,
-                 sftp_conn_id='ssh_default',
+                 sftp_conn_id='sftp_default',
                  s3_conn_id='aws_default',
                  *args,
                  **kwargs):

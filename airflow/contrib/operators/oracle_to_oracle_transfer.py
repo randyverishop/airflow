@@ -48,10 +48,10 @@ class OracleToOracleTransfer(BaseOperator):
     @apply_defaults
     def __init__(
             self,
-            oracle_destination_conn_id,
             destination_table,
-            oracle_source_conn_id,
             source_sql,
+            oracle_source_conn_id='oracle_default',
+            oracle_destination_conn_id='oracle_default',
             source_sql_params=None,
             rows_chunk=5000,
             *args, **kwargs):

@@ -29,7 +29,12 @@ class RedisKeySensor(BaseSensorOperator):
     ui_color = '#f0eee4'
 
     @apply_defaults
-    def __init__(self, key, redis_conn_id, *args, **kwargs):
+    def __init__(
+        self,
+        key,
+        redis_conn_id='redis_default',
+        *args, **kwargs
+    ):
         super(RedisKeySensor, self).__init__(*args, **kwargs)
         self.redis_conn_id = redis_conn_id
         self.key = key

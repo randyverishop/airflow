@@ -85,6 +85,9 @@ class BigtableInstanceCreateOperator(BaseOperator, BigtableValidationMixin):
     :type timeout: int
     :param timeout: (optional) timeout (in seconds) for instance creation.
                     If None is not specified, Operator will wait indefinitely.
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
     """
 
     REQUIRED_ATTRIBUTES = ('instance_id', 'main_cluster_id',
@@ -106,6 +109,7 @@ class BigtableInstanceCreateOperator(BaseOperator, BigtableValidationMixin):
                  cluster_nodes=None,
                  cluster_storage_type=None,
                  timeout=None,
+                 gcp_conn_id='google_cloud_default',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
@@ -120,7 +124,7 @@ class BigtableInstanceCreateOperator(BaseOperator, BigtableValidationMixin):
         self.cluster_storage_type = cluster_storage_type
         self.timeout = timeout
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id)
         super(BigtableInstanceCreateOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
@@ -171,6 +175,10 @@ class BigtableInstanceDeleteOperator(BaseOperator, BigtableValidationMixin):
     :param project_id: Optional, the ID of the GCP project.  If set to None or missing,
             the default project_id from the GCP connection is used.
     :type project_id: str
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
+
     """
     REQUIRED_ATTRIBUTES = ('instance_id',)
     template_fields = ['project_id', 'instance_id']
@@ -179,11 +187,12 @@ class BigtableInstanceDeleteOperator(BaseOperator, BigtableValidationMixin):
     def __init__(self,
                  instance_id,
                  project_id=None,
+                 gcp_conn_id='google_cloud_default',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id=gcp_conn_id)
         super(BigtableInstanceDeleteOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
@@ -227,6 +236,10 @@ class BigtableTableCreateOperator(BaseOperator, BigtableValidationMixin):
     :param column_families: (Optional) A map columns to create.
                             The key is the column_id str and the value is a
                             :class:`google.cloud.bigtable.column_family.GarbageCollectionRule`
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
+
     """
     REQUIRED_ATTRIBUTES = ('instance_id', 'table_id')
     template_fields = ['project_id', 'instance_id', 'table_id']
@@ -238,6 +251,7 @@ class BigtableTableCreateOperator(BaseOperator, BigtableValidationMixin):
                  project_id=None,
                  initial_split_keys=None,
                  column_families=None,
+                 gcp_conn_id='google_cloud_default',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
@@ -245,7 +259,7 @@ class BigtableTableCreateOperator(BaseOperator, BigtableValidationMixin):
         self.initial_split_keys = initial_split_keys or list()
         self.column_families = column_families or dict()
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id=gcp_conn_id)
         self.instance = None
         super(BigtableTableCreateOperator, self).__init__(*args, **kwargs)
 
@@ -316,6 +330,9 @@ class BigtableTableDeleteOperator(BaseOperator, BigtableValidationMixin):
             the default project_id from the GCP connection is used.
     :type app_profile_id: str
     :parm app_profile_id: Application profile.
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
     """
     REQUIRED_ATTRIBUTES = ('instance_id', 'table_id')
     template_fields = ['project_id', 'instance_id', 'table_id']
@@ -326,13 +343,14 @@ class BigtableTableDeleteOperator(BaseOperator, BigtableValidationMixin):
                  table_id,
                  project_id=None,
                  app_profile_id=None,
+                 gcp_conn_id='google_cloud_default',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
         self.table_id = table_id
         self.app_profile_id = app_profile_id
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id=gcp_conn_id)
         super(BigtableTableDeleteOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
@@ -377,6 +395,9 @@ class BigtableClusterUpdateOperator(BaseOperator, BigtableValidationMixin):
     :param nodes: The desired number of nodes for the Cloud Bigtable cluster.
     :type project_id: str
     :param project_id: Optional, the ID of the GCP project.
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
     """
     REQUIRED_ATTRIBUTES = ('instance_id', 'cluster_id', 'nodes')
     template_fields = ['project_id', 'instance_id', 'cluster_id', 'nodes']
@@ -387,13 +408,14 @@ class BigtableClusterUpdateOperator(BaseOperator, BigtableValidationMixin):
                  cluster_id,
                  nodes,
                  project_id=None,
+                 gcp_conn_id='google_cloud_default',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
         self.cluster_id = cluster_id
         self.nodes = nodes
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id)
         super(BigtableClusterUpdateOperator, self).__init__(*args, **kwargs)
 
     def execute(self, context):
@@ -436,6 +458,10 @@ class BigtableTableWaitForReplicationSensor(BaseSensorOperator, BigtableValidati
     :param table_id: The ID of the table to check replication status.
     :type project_id: str
     :param project_id: Optional, the ID of the GCP project.
+    :param gcp_conn_id: Optional, The connection ID used to connect to Google Cloud
+        Platform. Defaults to 'google_cloud_default'.
+    :type gcp_conn_id: int
+
     """
     REQUIRED_ATTRIBUTES = ('instance_id', 'table_id')
     template_fields = ['project_id', 'instance_id', 'table_id']
@@ -445,12 +471,13 @@ class BigtableTableWaitForReplicationSensor(BaseSensorOperator, BigtableValidati
                  instance_id,
                  table_id,
                  project_id=None,
+                 gcp_conn_id='google_cloud_defulat',
                  *args, **kwargs):
         self.project_id = project_id
         self.instance_id = instance_id
         self.table_id = table_id
         self._validate_inputs()
-        self.hook = BigtableHook()
+        self.hook = BigtableHook(gcp_conn_id=gcp_conn_id)
         super(BigtableTableWaitForReplicationSensor, self).__init__(*args, **kwargs)
 
     def poke(self, context):

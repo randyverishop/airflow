@@ -54,7 +54,7 @@ class WinRMOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  winrm_hook=None,
-                 ssh_conn_id=None,
+                 ssh_conn_id='ssh_conn_id',
                  remote_host=None,
                  command=None,
                  timeout=10,

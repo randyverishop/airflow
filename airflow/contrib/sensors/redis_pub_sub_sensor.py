@@ -31,7 +31,12 @@ class RedisPubSubSensor(BaseSensorOperator):
     ui_color = '#f0eee4'
 
     @apply_defaults
-    def __init__(self, channels, redis_conn_id, *args, **kwargs):
+    def __init__(
+        self,
+        channels,
+        redis_conn_id='redis_default',
+        *args, **kwargs
+    ):
         """
         Create a new RedisPubSubSensor and subscribe to the channels
 

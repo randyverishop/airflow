@@ -42,12 +42,12 @@ class MongoToS3Operator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 mongo_conn_id,
-                 s3_conn_id,
                  mongo_collection,
                  mongo_query,
                  s3_bucket,
                  s3_key,
+                 mongo_conn_id='mongo_default',
+                 s3_conn_id='aws_default',
                  mongo_db=None,
                  replace=False,
                  *args, **kwargs):
