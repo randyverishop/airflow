@@ -38,6 +38,7 @@ class NameDeterminer:
         - If they are the same: no action is taken.
         - If they are different: an exception is thrown.
     """
+
     def __init__(self, label, id_label, get_path):
         self.label = label
         self.id_label = id_label
@@ -62,17 +63,25 @@ class NameDeterminer:
                 self._raise_ex_unable_to_determine_name()
 
     def _raise_ex_unable_to_determine_name(self):
-        raise AirflowException("Unable to determine the {label} name. Please either set the name "
-                               "directly in the {label} object or provide the `location` and "
-                               "`{id_label}` parameters.".format(label=self.label, id_label=self.id_label))
+        raise AirflowException(
+            "Unable to determine the {label} name. Please either set the name directly in the {label} "
+            "object or provide the `location` and `{id_label}` parameters.".format(
+                label=self.label, id_label=self.id_label
+            )
+        )
 
     def _raise_ex_different_names(self, constructed_name, explicit_name):
-        raise AirflowException("The {label} name provided in the object ({explicit_name}) is different than "
-                               "the name created from the input parameters ({constructed_name}). Please "
-                               "either: 1) Remove the {label} name, 2) Remove the location and "
-                               "{id_label} parameters, 3) Unify the {label} name and input parameters."
-                               .format(label=self.label, explicit_name=explicit_name,
-                                       constructed_name=constructed_name, id_label=self.id_label))
+        raise AirflowException(
+            "The {label} name provided in the object ({explicit_name}) is different than the name created "
+            "from the input parameters ({constructed_name}). Please either: 1) Remove the {label} name, 2) "
+            "Remove the location and {id_label} parameters, 3) Unify the {label} name and input "
+            "parameters.".format(
+                label=self.label,
+                explicit_name=explicit_name,
+                constructed_name=constructed_name,
+                id_label=self.id_label,
+            )
+        )
 
 
 class CloudVisionHook(GoogleCloudBaseHook):
@@ -82,12 +91,11 @@ class CloudVisionHook(GoogleCloudBaseHook):
 
     _client = None
     product_name_determiner = NameDeterminer('Product', 'product_id', ProductSearchClient.product_path)
-    product_set_name_determiner = NameDeterminer('ProductSet', 'productset_id',
-                                                 ProductSearchClient.product_set_path)
+    product_set_name_determiner = NameDeterminer(
+        'ProductSet', 'productset_id', ProductSearchClient.product_set_path
+    )
 
-    def __init__(self,
-                 gcp_conn_id='google_cloud_default',
-                 delegate_to=None):
+    def __init__(self, gcp_conn_id='google_cloud_default', delegate_to=None):
         super(CloudVisionHook, self).__init__(gcp_conn_id, delegate_to)
 
     def get_conn(self):
@@ -102,8 +110,16 @@ class CloudVisionHook(GoogleCloudBaseHook):
         return self._client
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def create_product_set(self, location, product_set, project_id=None,
-                           product_set_id=None, retry=None, timeout=None, metadata=None):
+    def create_product_set(
+        self,
+        location,
+        product_set,
+        project_id=None,
+        product_set_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductSetCreateOperator`
@@ -111,9 +127,15 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         parent = ProductSearchClient.location_path(project_id, location)
         self.log.info('Creating a new ProductSet under the parent: %s', parent)
-        response = self._handle_request(lambda **kwargs: client.create_product_set(**kwargs), parent=parent,
-                                        product_set=product_set, product_set_id=product_set_id, retry=retry,
-                                        timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.create_product_set(**kwargs),
+            parent=parent,
+            product_set=product_set,
+            product_set_id=product_set_id,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('ProductSet created: %s', response.name if response else '')
         self.log.debug('ProductSet created:\n%s', response)
 
@@ -125,8 +147,9 @@ class CloudVisionHook(GoogleCloudBaseHook):
         return product_set_id
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def get_product_set(self, location, product_set_id, project_id=None,
-                        retry=None, timeout=None, metadata=None):
+    def get_product_set(
+        self, location, product_set_id, project_id=None, retry=None, timeout=None, metadata=None
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductSetGetOperator`
@@ -134,33 +157,54 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         name = ProductSearchClient.product_set_path(project_id, location, product_set_id)
         self.log.info('Retrieving ProductSet: %s', name)
-        response = self._handle_request(lambda **kwargs: client.get_product_set(**kwargs), name=name,
-                                        retry=retry, timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.get_product_set(**kwargs),
+            name=name,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('ProductSet retrieved.')
         self.log.debug('ProductSet retrieved:\n%s', response)
         return MessageToDict(response)
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def update_product_set(self, product_set, location=None, product_set_id=None, update_mask=None,
-                           project_id=None, retry=None, timeout=None, metadata=None):
+    def update_product_set(
+        self,
+        product_set,
+        location=None,
+        product_set_id=None,
+        update_mask=None,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductSetUpdateOperator`
         """
         client = self.get_conn()
         product_set = self.product_set_name_determiner.get_entity_with_name(
-            product_set, product_set_id, location, project_id)
+            product_set, product_set_id, location, project_id
+        )
         self.log.info('Updating ProductSet: %s', product_set.name)
-        response = self._handle_request(lambda **kwargs: client.update_product_set(**kwargs),
-                                        product_set=product_set, update_mask=update_mask, retry=retry,
-                                        timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.update_product_set(**kwargs),
+            product_set=product_set,
+            update_mask=update_mask,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('ProductSet updated: %s', response.name if response else '')
         self.log.debug('ProductSet updated:\n%s', response)
         return MessageToDict(response)
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def delete_product_set(self, location, product_set_id, project_id=None, retry=None, timeout=None,
-                           metadata=None):
+    def delete_product_set(
+        self, location, product_set_id, project_id=None, retry=None, timeout=None, metadata=None
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductSetDeleteOperator`
@@ -168,14 +212,20 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         name = ProductSearchClient.product_set_path(project_id, location, product_set_id)
         self.log.info('Deleting ProductSet: %s', name)
-        response = self._handle_request(lambda **kwargs: client.delete_product_set(**kwargs), name=name,
-                                        retry=retry, timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.delete_product_set(**kwargs),
+            name=name,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('ProductSet with the name [%s] deleted.', name)
         return response
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def create_product(self, location, product, project_id=None,
-                       product_id=None, retry=None, timeout=None, metadata=None):
+    def create_product(
+        self, location, product, project_id=None, product_id=None, retry=None, timeout=None, metadata=None
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductCreateOperator`
@@ -183,9 +233,15 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         parent = ProductSearchClient.location_path(project_id, location)
         self.log.info('Creating a new Product under the parent: %s', parent)
-        response = self._handle_request(lambda **kwargs: client.create_product(**kwargs), parent=parent,
-                                        product=product, product_id=product_id, retry=retry,
-                                        timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.create_product(**kwargs),
+            parent=parent,
+            product=product,
+            product_id=product_id,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('Product created: %s', response.name if response else '')
         self.log.debug('Product created:\n%s', response)
 
@@ -205,15 +261,29 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         name = ProductSearchClient.product_path(project_id, location, product_id)
         self.log.info('Retrieving Product: %s', name)
-        response = self._handle_request(lambda **kwargs: client.get_product(**kwargs), name=name, retry=retry,
-                                        timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.get_product(**kwargs),
+            name=name,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('Product retrieved.')
         self.log.debug('Product retrieved:\n%s', response)
         return MessageToDict(response)
 
     @GoogleCloudBaseHook.fallback_to_default_project_id
-    def update_product(self, product, location=None, product_id=None, update_mask=None, project_id=None,
-                       retry=None, timeout=None, metadata=None):
+    def update_product(
+        self,
+        product,
+        location=None,
+        product_id=None,
+        update_mask=None,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+    ):
         """
         For the documentation see:
         :py:class:`~airflow.contrib.operators.gcp_vision_operator.CloudVisionProductUpdateOperator`
@@ -221,9 +291,14 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         product = self.product_name_determiner.get_entity_with_name(product, product_id, location, project_id)
         self.log.info('Updating ProductSet: %s', product.name)
-        response = self._handle_request(lambda **kwargs: client.update_product(**kwargs), product=product,
-                                        update_mask=update_mask, retry=retry, timeout=timeout,
-                                        metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.update_product(**kwargs),
+            product=product,
+            update_mask=update_mask,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('Product updated: %s', response.name if response else '')
         self.log.debug('Product updated:\n%s', response)
         return MessageToDict(response)
@@ -237,8 +312,13 @@ class CloudVisionHook(GoogleCloudBaseHook):
         client = self.get_conn()
         name = ProductSearchClient.product_path(project_id, location, product_id)
         self.log.info('Deleting ProductSet: %s', name)
-        response = self._handle_request(lambda **kwargs: client.delete_product(**kwargs), name=name,
-                                        retry=retry, timeout=timeout, metadata=metadata)
+        response = self._handle_request(
+            lambda **kwargs: client.delete_product(**kwargs),
+            name=name,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         self.log.info('Product with the name [%s] deleted:', name)
         return response
 
@@ -252,8 +332,7 @@ class CloudVisionHook(GoogleCloudBaseHook):
                 self.log.error('The request failed:\n%s', str(e))
                 raise AirflowException(e)
         except RetryError as e:
-            self.log.error('The request failed due to a retryable error and retry '
-                           'attempts failed.')
+            self.log.error('The request failed due to a retryable error and retry attempts failed.')
             raise AirflowException(e)
         except ValueError as e:
             self.log.error('The request failed, the parameters are invalid.')

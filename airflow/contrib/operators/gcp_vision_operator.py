@@ -57,20 +57,25 @@ class CloudVisionProductSetCreateOperator(BaseOperator):
     :param gcp_conn_id: The connection ID used to connect to Google Cloud Platform.
     :type gcp_conn_id: str
     """
+
     # [START vision_productset_create_template_fields]
     template_fields = ('location', 'project_id', 'product_set_id', 'gcp_conn_id')
     # [END vision_productset_create_template_fields]
 
     @apply_defaults
-    def __init__(self, product_set,
-                 location,
-                 project_id=None,
-                 product_set_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        product_set,
+        location,
+        project_id=None,
+        product_set_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductSetCreateOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.project_id = project_id
@@ -84,16 +89,20 @@ class CloudVisionProductSetCreateOperator(BaseOperator):
 
     def execute(self, context):
         try:
-            return self._hook.create_product_set(location=self.location,
-                                                 project_id=self.project_id,
-                                                 product_set=self.product_set,
-                                                 product_set_id=self.product_set_id,
-                                                 retry=self.retry,
-                                                 timeout=self.timeout,
-                                                 metadata=self.metadata)
+            return self._hook.create_product_set(
+                location=self.location,
+                project_id=self.project_id,
+                product_set=self.product_set,
+                product_set_id=self.product_set_id,
+                retry=self.retry,
+                timeout=self.timeout,
+                metadata=self.metadata,
+            )
         except AlreadyExists:
-            self.log.info('Product set with id %s already exists. Exiting from the create operation.',
-                          self.product_set_id)
+            self.log.info(
+                'Product set with id %s already exists. Exiting from the create operation.',
+                self.product_set_id,
+            )
             return self.product_set_id
 
 
@@ -125,20 +134,24 @@ class CloudVisionProductSetGetOperator(BaseOperator):
     :param gcp_conn_id: The connection ID used to connect to Google Cloud Platform.
     :type gcp_conn_id: str
     """
+
     # [START vision_productset_get_template_fields]
     template_fields = ('location', 'project_id', 'product_set_id', 'gcp_conn_id')
     # [END vision_productset_get_template_fields]
 
     @apply_defaults
-    def __init__(self,
-                 location,
-                 product_set_id,
-                 project_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        location,
+        product_set_id,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductSetGetOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.project_id = project_id
@@ -150,12 +163,14 @@ class CloudVisionProductSetGetOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.get_product_set(location=self.location,
-                                          product_set_id=self.product_set_id,
-                                          project_id=self.project_id,
-                                          retry=self.retry,
-                                          timeout=self.timeout,
-                                          metadata=self.metadata)
+        return self._hook.get_product_set(
+            location=self.location,
+            product_set_id=self.product_set_id,
+            project_id=self.project_id,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
 
 
 class CloudVisionProductSetUpdateOperator(BaseOperator):
@@ -206,21 +221,26 @@ class CloudVisionProductSetUpdateOperator(BaseOperator):
     :type gcp_conn_id: str
 
     """
+
     # [START vision_productset_update_template_fields]
     template_fields = ('location', 'project_id', 'product_set_id', 'gcp_conn_id')
     # [END vision_productset_update_template_fields]
 
     @apply_defaults
-    def __init__(self, product_set,
-                 location=None,
-                 product_set_id=None,
-                 project_id=None,
-                 update_mask=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        product_set,
+        location=None,
+        product_set_id=None,
+        project_id=None,
+        update_mask=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductSetUpdateOperator, self).__init__(*args, **kwargs)
         self.product_set = product_set
         self.update_mask = update_mask
@@ -234,14 +254,16 @@ class CloudVisionProductSetUpdateOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.update_product_set(location=self.location,
-                                             product_set_id=self.product_set_id,
-                                             project_id=self.project_id,
-                                             product_set=self.product_set,
-                                             update_mask=self.update_mask,
-                                             retry=self.retry,
-                                             timeout=self.timeout,
-                                             metadata=self.metadata)
+        return self._hook.update_product_set(
+            location=self.location,
+            product_set_id=self.product_set_id,
+            project_id=self.project_id,
+            product_set=self.product_set,
+            update_mask=self.update_mask,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
 
 
 class CloudVisionProductSetDeleteOperator(BaseOperator):
@@ -275,19 +297,24 @@ class CloudVisionProductSetDeleteOperator(BaseOperator):
     :type gcp_conn_id: str
 
     """
+
     # [START vision_productset_delete_template_fields]
     template_fields = ('location', 'project_id', 'product_set_id', 'gcp_conn_id')
     # [END vision_productset_delete_template_fields]
 
     @apply_defaults
-    def __init__(self, location,
-                 product_set_id,
-                 project_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        location,
+        product_set_id,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductSetDeleteOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.project_id = project_id
@@ -299,12 +326,14 @@ class CloudVisionProductSetDeleteOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.delete_product_set(location=self.location,
-                                             product_set_id=self.product_set_id,
-                                             project_id=self.project_id,
-                                             retry=self.retry,
-                                             timeout=self.timeout,
-                                             metadata=self.metadata)
+        return self._hook.delete_product_set(
+            location=self.location,
+            product_set_id=self.product_set_id,
+            project_id=self.project_id,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
 
 
 class CloudVisionProductCreateOperator(BaseOperator):
@@ -348,21 +377,25 @@ class CloudVisionProductCreateOperator(BaseOperator):
     :type gcp_conn_id: str
 
     """
+
     # [START vision_product_create_template_fields]
     template_fields = ('location', 'project_id', 'product_id', 'gcp_conn_id')
     # [END vision_product_create_template_fields]
 
     @apply_defaults
-    def __init__(self,
-                 location,
-                 product,
-                 project_id=None,
-                 product_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        location,
+        product,
+        project_id=None,
+        product_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductCreateOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.product = product
@@ -376,16 +409,19 @@ class CloudVisionProductCreateOperator(BaseOperator):
 
     def execute(self, context):
         try:
-            return self._hook.create_product(location=self.location,
-                                             product=self.product,
-                                             project_id=self.project_id,
-                                             product_id=self.product_id,
-                                             retry=self.retry,
-                                             timeout=self.timeout,
-                                             metadata=self.metadata)
+            return self._hook.create_product(
+                location=self.location,
+                product=self.product,
+                project_id=self.project_id,
+                product_id=self.product_id,
+                retry=self.retry,
+                timeout=self.timeout,
+                metadata=self.metadata,
+            )
         except AlreadyExists:
-            self.log.info('Product with id %s already exists. Exiting from the create operation.',
-                          self.product_id)
+            self.log.info(
+                'Product with id %s already exists. Exiting from the create operation.', self.product_id
+            )
             return self.product_id
 
 
@@ -422,20 +458,24 @@ class CloudVisionProductGetOperator(BaseOperator):
     :type gcp_conn_id: str
 
     """
+
     # [START vision_product_get_template_fields]
     template_fields = ('location', 'project_id', 'product_id', 'gcp_conn_id')
     # [END vision_product_get_template_fields]
 
     @apply_defaults
-    def __init__(self,
-                 location,
-                 product_id,
-                 project_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        location,
+        product_id,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductGetOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.product_id = product_id
@@ -447,12 +487,14 @@ class CloudVisionProductGetOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.get_product(location=self.location,
-                                      product_id=self.product_id,
-                                      project_id=self.project_id,
-                                      retry=self.retry,
-                                      timeout=self.timeout,
-                                      metadata=self.metadata)
+        return self._hook.get_product(
+            location=self.location,
+            product_id=self.product_id,
+            project_id=self.project_id,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
 
 
 class CloudVisionProductUpdateOperator(BaseOperator):
@@ -518,16 +560,20 @@ class CloudVisionProductUpdateOperator(BaseOperator):
     # [END vision_product_update_template_fields]
 
     @apply_defaults
-    def __init__(self, product,
-                 location=None,
-                 product_id=None,
-                 project_id=None,
-                 update_mask=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        product,
+        location=None,
+        product_id=None,
+        project_id=None,
+        update_mask=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductUpdateOperator, self).__init__(*args, **kwargs)
         self.product = product
         self.location = location
@@ -541,14 +587,16 @@ class CloudVisionProductUpdateOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.update_product(product=self.product,
-                                         location=self.location,
-                                         product_id=self.product_id,
-                                         project_id=self.project_id,
-                                         update_mask=self.update_mask,
-                                         retry=self.retry,
-                                         timeout=self.timeout,
-                                         metadata=self.metadata)
+        return self._hook.update_product(
+            product=self.product,
+            location=self.location,
+            product_id=self.product_id,
+            project_id=self.project_id,
+            update_mask=self.update_mask,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
 
 
 class CloudVisionProductDeleteOperator(BaseOperator):
@@ -592,14 +640,18 @@ class CloudVisionProductDeleteOperator(BaseOperator):
     # [END vision_product_delete_template_fields]
 
     @apply_defaults
-    def __init__(self, location,
-                 product_id,
-                 project_id=None,
-                 retry=None,
-                 timeout=None,
-                 metadata=None,
-                 gcp_conn_id='google_cloud_default',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        location,
+        product_id,
+        project_id=None,
+        retry=None,
+        timeout=None,
+        metadata=None,
+        gcp_conn_id='google_cloud_default',
+        *args,
+        **kwargs
+    ):
         super(CloudVisionProductDeleteOperator, self).__init__(*args, **kwargs)
         self.location = location
         self.product_id = product_id
@@ -611,9 +663,11 @@ class CloudVisionProductDeleteOperator(BaseOperator):
         self._hook = CloudVisionHook(gcp_conn_id=self.gcp_conn_id)
 
     def execute(self, context):
-        return self._hook.delete_product(location=self.location,
-                                         product_id=self.product_id,
-                                         project_id=self.project_id,
-                                         retry=self.retry,
-                                         timeout=self.timeout,
-                                         metadata=self.metadata)
+        return self._hook.delete_product(
+            location=self.location,
+            product_id=self.product_id,
+            project_id=self.project_id,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata,
+        )
