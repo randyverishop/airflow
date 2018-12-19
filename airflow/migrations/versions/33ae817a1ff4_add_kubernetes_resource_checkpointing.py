@@ -46,8 +46,9 @@ def upgrade():
 
     conn = op.get_bind()
 
-    # alembic creates an invalid SQL for mssql dialect
-    if conn.dialect.name not in ('mssql'):
+    # alembic creates an invalid SQL for mssql and spanner dialect
+    # HACK: disable CHECK constraint for spanner
+    if conn.dialect.name not in ('mssql', 'spanner'):
         columns_and_constraints.append(sa.CheckConstraint("one_row_id", name="kube_resource_version_one_row_id"))
 
     table = op.create_table(

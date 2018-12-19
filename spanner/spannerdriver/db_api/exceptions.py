@@ -1,3 +1,4 @@
+# noinspection PyShadowingBuiltins
 class Warning(Exception):
     """Exception raised for important DB-API warnings."""
 

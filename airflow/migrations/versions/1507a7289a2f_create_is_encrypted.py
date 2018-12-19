@@ -61,9 +61,11 @@ def upgrade():
         sa.Column('is_encrypted', sa.Boolean, unique=False, default=False))
 
     conn = op.get_bind()
-    conn.execute(
-        connectionhelper.update().values(is_encrypted=False)
-    )
+    # HACK: disable WHERE-less UPDATE
+    if conn.dialect.name != 'spanner':
+        conn.execute(
+            connectionhelper.update().values(is_encrypted=False)
+        )
 
 
 def downgrade():
