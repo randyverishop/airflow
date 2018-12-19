@@ -242,7 +242,7 @@ class CloudSqlTest(unittest.TestCase):
             )
             op.execute(None)
         err = cm.exception
-        self.assertIn("The required parameter 'project_id' is empty", str(err))
+        self.assertIn("The optional parameter 'project_id' is empty", str(err))
         mock_hook.assert_not_called()
 
     @mock.patch("airflow.contrib.operators.gcp_sql_operator.CloudSqlHook")
