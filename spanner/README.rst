@@ -1,0 +1,1 @@
+Spanner dialect for SQLAlchemy.
