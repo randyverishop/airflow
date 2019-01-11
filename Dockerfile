@@ -16,26 +16,77 @@
 
 FROM python:3.6-slim
 
-COPY . /opt/airflow/
+SHELL ["/bin/bash", "-c"]
+
+# Make sure noninteractie debian install is used
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Increase the value to force renstalling of all apt-get dependencies
+ENV FORCE_REINSTALL_APT_GET_DEPENDENCIES=1
+
+# Install  build dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    libkrb5-dev libsasl2-dev libssl-dev libffi-dev libpq-dev git \
+    libsasl2-dev freetds-bin build-essential default-libmysqlclient-dev apt-utils \
+    curl rsync netcat locales \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG AIRFLOW_HOME=/usr/local/airflow
-ARG AIRFLOW_DEPS="all"
-ARG PYTHON_DEPS=""
-ARG buildDeps="freetds-dev libkrb5-dev libsasl2-dev libssl-dev libffi-dev libpq-dev git"
-ARG APT_DEPS="$buildDeps libsasl2-dev freetds-bin build-essential default-libmysqlclient-dev apt-utils curl rsync netcat locales"
+RUN mkdir -p $AIRFLOW_HOME
+
+# Airflow extras to be installed
+ARG AIRFLOW_EXTRAS="all"
+
+# Increase the value here to force reinstalling Apache Airflow pip dependencies
+ENV FORCE_REINSTALL_ALL_PIP_DEPENDENCIES=1
+
+# Speeds up building the image - cassandra driver without CYTHON saves around 10 minutes
+# of build on typical machine
+ARG CASS_DRIVER_NO_CYTHON_ARG=""
+
+# Build cassandra driver on multiple CPUs
+ENV CASS_DRIVER_BUILD_CONCURRENCY=8
+
+# Speeds up the installation of cassandra driver
+ENV CASS_DRIVER_NO_CYTHON=${CASS_DRIVER_NO_CYTHON_ARG}
+
+## Airflow requires this variable be set on installation to avoid a GPL dependency.
+ENV SLUGIFY_USES_TEXT_UNIDECODE yes
+
+# Airflow sources change frequently but dependency onfiguration won't change that often
+# We copy setup.py and other files needed to perform setup of dependencies
+# This way cache here will only be invalidated if any of the
+# version/setup configuration change but not when airflow sources change
+COPY setup.* /opt/airflow/
+COPY README.md /opt/airflow/
+COPY airflow/version.py /opt/airflow/airflow/version.py
+COPY airflow/__init__.py /opt/airflow/airflow/__init__.py
+COPY airflow/bin/airflow /opt/airflow/airflow/bin/airflow
 
 WORKDIR /opt/airflow
-RUN set -x \
-    && apt update \
-    && if [ -n "${APT_DEPS}" ]; then apt install -y $APT_DEPS; fi \
-    && if [ -n "${PYTHON_DEPS}" ]; then pip install --no-cache-dir ${PYTHON_DEPS}; fi \
-    && pip install --no-cache-dir -e .[$AIRFLOW_DEPS] \
-    && apt purge --auto-remove -yqq $buildDeps \
-    && apt autoremove -yqq --purge \
-    && apt clean
+# First install only dependencies but no Apache Airflow itself - this way regular Airflow
+RUN pip install --no-cache-dir -e.[$AIRFLOW_EXTRAS]
 
-WORKDIR $AIRFLOW_HOME
-RUN mkdir -p $AIRFLOW_HOME
+# Cache for this will be automatically invalidated if any of airflow sources change
+COPY . /opt/airflow/
+
+# Always add get update here to get latest dependencies before we redo pip install
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# PIP Install including Apache Airflow code now -
+# dependencies should be installed in the previous run
+# But we run them just in case some of the apt-get update above
+# causes a conflict
+RUN pip install -e .[$AIRFLOW_EXTRAS]
+
+# Additional python dependencies
+ARG ADDITIONAL_PYTHON_DEPS=""
+
+RUN if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi
+
 COPY scripts/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]
