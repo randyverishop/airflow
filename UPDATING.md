@@ -24,6 +24,34 @@ assists users migrating to a new version.
 
 ## Airflow Master
 
+### Change of method signature in `GCPTransferServiceHook`
+
+The signature of the `create_transfer_job` method in `GCPTransferServiceHook`
+class has changed. The change does not change the behavior of the method.
+Old signature:
+```python
+def create_transfer_job(self, description, schedule, transfer_spec, project_id=None):
+```
+New signature:
+```python
+def create_transfer_job(self, body):
+```
+
+It is necessary to rewrite calls to method. The new call looks like this:
+```python
+body = {
+'status': 'ENABLED',
+  'projectId': project_id,
+  'description': description,
+  'transferSpec': transfer_spec,
+  'schedule': schedule,
+}
+gct_hook.create_transfer_job(body)
+```
+The change results from the unification of all hooks and getting to
+[the official recommendations](https://lists.apache.org/thread.html/e8534d82be611ae7bcb21ba371546a4278aad117d5e50361fd8f14fe@%3Cdev.airflow.apache.org%3E)
+for the Google Cloud Platform.
+
 ### Renamed "extra" requirments for cloud providers
 
 Subpackages for specific services have been combined into one variant for
