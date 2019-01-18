@@ -24,6 +24,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Increase the value to force renstalling of all apt-get dependencies
 ENV FORCE_REINSTALL_APT_GET_DEPENDENCIES=1
 
+ARG AIRFLOW_TAG
+
+# If you build for different version it will invalidate the cache here and rebuild from scratch
+# This is typically used in release versions
+ENV AIRFLOW_TAG=${AIRFLOW_TAG:-"development"}
+
+RUN echo "Airflow tag: ${AIRFLOW_TAG}"
+
 # Install  build dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

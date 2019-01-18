@@ -38,7 +38,7 @@ PY3 = sys.version_info[0] == 3
 try:
     with io.open('README.md', encoding='utf-8') as f:
         long_description = f.read()
-except FileNotFoundError as e:
+except FileNotFoundError:
     long_description = ''
 
 
