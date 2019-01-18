@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set +x
+
+# Pull the image for image currently built if it exists
+docker pull ${IMAGE_NAME} || true
+
+# Pull the image for latest build if it exists
+docker pull ${DOCKER_REPO}:latest || true
+
+# Build the image using cached versions if present - both the branch/tag version and latest build can be used
+# as cache source - docker will choose appropriate cache based on hashes of the files changed
+docker build --build-arg AIRFLOW_TAG=${CACHE_TAG} -f ${DOCKERFILE_PATH} -t ${IMAGE_NAME} --cache-from \
+    ${IMAGE_NAME} --cache-from ${DOCKER_REPO}:latest .
