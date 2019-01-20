@@ -35,8 +35,11 @@ version = imp.load_source(
 
 PY3 = sys.version_info[0] == 3
 
-with io.open('README.md', encoding='utf-8') as f:
-    long_description = f.read()
+try:
+    with io.open('README.md', encoding='utf-8') as f:
+        long_description = f.read()
+except FileNotFoundError as e:
+    long_description = ''
 
 
 class Tox(TestCommand):

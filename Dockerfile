@@ -51,41 +51,41 @@ ENV CASS_DRIVER_BUILD_CONCURRENCY=8
 # Speeds up the installation of cassandra driver
 ENV CASS_DRIVER_NO_CYTHON=${CASS_DRIVER_NO_CYTHON_ARG}
 
-## Airflow requires this variable be set on installation to avoid a GPL dependency.
-ENV SLUGIFY_USES_TEXT_UNIDECODE yes
-
 # Airflow sources change frequently but dependency onfiguration won't change that often
 # We copy setup.py and other files needed to perform setup of dependencies
 # This way cache here will only be invalidated if any of the
 # version/setup configuration change but not when airflow sources change
 COPY setup.* /opt/airflow/
-COPY README.md /opt/airflow/
 COPY airflow/version.py /opt/airflow/airflow/version.py
 COPY airflow/__init__.py /opt/airflow/airflow/__init__.py
 COPY airflow/bin/airflow /opt/airflow/airflow/bin/airflow
 
 WORKDIR /opt/airflow
-# First install only dependencies but no Apache Airflow itself - this way regular Airflow
+# First install only dependencies but no Apache Airflow itself
+# This way regular changes in sources of Airflow will not trigger reinstallation of all dependencies
+# And this Docker layer will be reused between builds.
 RUN pip install --no-cache-dir -e.[$AIRFLOW_EXTRAS]
 
-# Cache for this will be automatically invalidated if any of airflow sources change
+# Cache for this line will be automatically invalidated if any of airflow sources change
 COPY . /opt/airflow/
 
-# Always add get update here to get latest dependencies before we redo pip install
+# Always add-get update/upgrade here to get latest dependencies before we redo pip install
 RUN apt-get update \
     && apt-get upgrade -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # PIP Install including Apache Airflow code now -
-# dependencies should be installed in the previous run
+# dependencies should be installed in the previous layer
 # But we run them just in case some of the apt-get update above
-# causes a conflict
+# cause a conflict or make change to the way dependencies are resolved
+# and in case some transitive dependencies will be resolved differently
+# at this new 'pip install' run
 RUN pip install -e .[$AIRFLOW_EXTRAS]
 
 # Additional python dependencies
 ARG ADDITIONAL_PYTHON_DEPS=""
 
-RUN if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi
+RUN if [ -n "${ADDITIONAL_PYTHON_DEPS}" ]; then pip install ${ADDITIONAL_PYTHON_DEPS}; fi
 
 COPY scripts/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
