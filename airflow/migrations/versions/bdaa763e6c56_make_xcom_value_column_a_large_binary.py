@@ -27,6 +27,9 @@ from alembic import op
 import dill
 import sqlalchemy as sa
 
+# HACK: We should find a better way
+from airflow.utils.sqlalchemy import PotentialBase64PickleType
+
 # revision identifiers, used by Alembic.
 revision = 'bdaa763e6c56'
 down_revision = 'cc1e65623dc7'
@@ -45,4 +48,4 @@ def upgrade():
 def downgrade():
     # use batch_alter_table to support SQLite workaround
     with op.batch_alter_table("xcom") as batch_op:
-        batch_op.alter_column('value', type_=sa.PickleType(pickler=dill))
+        batch_op.alter_column('value', type_=PotentialBase64PickleType(pickler=dill))

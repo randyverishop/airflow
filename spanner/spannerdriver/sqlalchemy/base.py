@@ -65,6 +65,10 @@ class SpannerCompiler(compiler.SQLCompiler):
     def visit_sequence(self, sequence):
         raise NotImplementedError()
 
+    # HACK: Spanner does not support FOR UPDATE clause
+    def for_update_clause(self, select, **kw):
+        return ""
+
     extract_map = compiler.SQLCompiler.extract_map.copy()
 
 
@@ -179,6 +183,10 @@ class SpannerDialect(default.DefaultDialect):
     execution_ctx_cls = SpannerExecutionContext
     type_compiler = SpannerTypeCompiler
     supports_native_boolean = True
+
+    def _check_unicode_returns(self, connection, additional_tests=None):
+        # requests gives back Unicode strings
+        return True
 
     def has_table(self, connection, table_name, schema=None):
         cursor = connection.execute("""

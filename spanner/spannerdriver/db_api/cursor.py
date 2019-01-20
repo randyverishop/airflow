@@ -63,28 +63,72 @@ SPECIAL_DML_OPERATIONS = [
     )
 ]
 
+# HACK: determine type of parameters on their names if value is None
 
-def get_param_type(param):
-    if isinstance(param, str):
-        return STRING
-    if isinstance(param, bool):
-        # error in name of Spanner param types :)
-        return BOOE
-    if isinstance(param, int):
-        return INT64
-    if isinstance(param, float):
-        return FLOAT64
-    if isinstance(param, collections.Sequence):
-        return BYTES
-    if isinstance(param, datetime.date):
-        return DATE
-    if isinstance(param, datetime.datetime):
-        return TIMESTAMP
-    if param is None:
-        return type_pb2.Type(code=type_pb2.TYPE_CODE_UNSPECIFIED)
+KNOWN_PARAM_TYPES = {
+    'password': STRING,
+    'login': STRING,
+    'host': STRING,
+    'port': INT64,
+    'extra': STRING,
+    'schema': STRING,
+    'last_pickled': TIMESTAMP,
+    'last_expired': TIMESTAMP,
+    'scheduler_lock': BOOE,
+    'pickle_id': INT64,
+    'y_log_scale': BOOE,
+    'show_datatable': BOOE,
+    'user_id': INT64,
+    'dag_id': STRING,
+    'task_id': STRING,
+    'execution_date': TIMESTAMP,
+    'start_date': TIMESTAMP,
+    'end_date': TIMESTAMP,
+    'duration': FLOAT64,
+    'state': STRING,
+    'job_id': INT64,
+    'operator': STRING,
+    'queued_dttm': TIMESTAMP,
+    'pid': INT64,
+    'pool': STRING
+}
+
+
+def force_convert_parameters(param_name, param_value):
+    if param_name == 'port' and isinstance(param_value, str):
+        try:
+            return int(param_value)
+        except Exception:
+            return param_value
+    return param_value
 
 
 class Cursor(object):
+
+    @staticmethod
+    def get_param_type(param_value, param_name=None):
+        param_value = force_convert_parameters(param_name, param_value)
+        if isinstance(param_value, str):
+            return STRING
+        if isinstance(param_value, bool):
+            # error in name of Spanner param types :)
+            return BOOE
+        if isinstance(param_value, int):
+            return INT64
+        if isinstance(param_value, float):
+            return FLOAT64
+        if isinstance(param_value, collections.Sequence):
+            return BYTES
+        if isinstance(param_value, datetime.datetime):
+            return TIMESTAMP
+        if isinstance(param_value, datetime.date):
+            return DATE
+        if param_value is None:
+            if param_name:
+                known_type = KNOWN_PARAM_TYPES.get(param_name)
+                if known_type:
+                    return known_type
+            return type_pb2.Type(code=type_pb2.TYPE_CODE_UNSPECIFIED)
 
     def __init__(self, connection: Connection):
         self.connection = connection
@@ -237,7 +281,7 @@ class Cursor(object):
                 for key in parameters.keys():
                     spanner_param_names[key] = '@' + key
                     spanner_param_types[key] = \
-                        get_param_type(parameters[key])
+                        self.get_param_type(parameters[key], param_name=key)
                     spanner_param_values[key] = parameters[key]
                 operation = operation % spanner_param_names
                 logger.info("Running query after preparing parameters: '%s' "

@@ -26,6 +26,7 @@ Create Date: 2015-10-29 08:36:31.726728
 """
 from alembic import op
 import sqlalchemy as sa
+from airflow.utils.sqlalchemy import PotentialBase64PickleType
 
 # revision identifiers, used by Alembic.
 revision = '40e67319e3a9'
@@ -35,7 +36,7 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('dag_run', sa.Column('conf', sa.PickleType(), nullable=True))
+    op.add_column('dag_run', sa.Column('conf', PotentialBase64PickleType(), nullable=True))
 
 
 def downgrade():

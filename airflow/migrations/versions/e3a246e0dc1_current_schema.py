@@ -29,6 +29,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import func
 from sqlalchemy.engine.reflection import Inspector
+from airflow.utils.sqlalchemy import PotentialBase64PickleType
 
 # revision identifiers, used by Alembic.
 revision = 'e3a246e0dc1'
@@ -76,7 +77,7 @@ def upgrade():
         op.create_table(
             'dag_pickle',
             sa.Column('id', sa.Integer(), nullable=False),
-            sa.Column('pickle', sa.PickleType(), nullable=True),
+            sa.Column('pickle', (), nullable=True),
             sa.Column('created_dttm', sa.DateTime(), nullable=True),
             sa.Column('pickle_hash', sa.BigInteger(), nullable=True),
             sa.PrimaryKeyConstraint('id')
@@ -248,7 +249,7 @@ def upgrade():
             'xcom',
             sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('key', sa.String(length=512), nullable=True),
-            sa.Column('value', sa.PickleType(), nullable=True),
+            sa.Column('value', PotentialBase64PickleType(), nullable=True),
             sa.Column(
                 'timestamp',
                 sa.DateTime(),

@@ -30,6 +30,9 @@ import contextlib
 from airflow import settings
 from airflow.utils.log.logging_mixin import LoggingMixin
 
+from spanner.spannerdriver.db_api import Cursor
+from google.cloud.spanner_v1.proto import type_pb2
+
 log = LoggingMixin().log
 
 

@@ -106,6 +106,8 @@ from airflow.utils.weight_rule import WeightRule
 from airflow.utils.net import get_hostname
 from airflow.utils.log.logging_mixin import LoggingMixin
 
+from airflow.utils.sqlalchemy import PotentialBase64PickleType
+
 install_aliases()
 
 SQL_ALCHEMY_SCHEMA = configuration.get('core', 'SQL_ALCHEMY_SCHEMA')
@@ -119,6 +121,10 @@ ID_LEN = 250
 XCOM_RETURN_KEY = 'return_value'
 
 Stats = settings.Stats
+
+
+def get_random_unique_id():
+    return uuid.uuid4().int >> 64 & 0x7FFFFFFFFFFFFFFF
 
 
 class InvalidFernetToken(Exception):
@@ -598,7 +604,8 @@ class DagBag(BaseDagBag, LoggingMixin):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     username = Column(String(ID_LEN), unique=True)
     email = Column(String(500))
     superuser = Column(Boolean(), default=False)
@@ -622,7 +629,8 @@ class Connection(Base, LoggingMixin):
     """
     __tablename__ = "connection"
 
-    id = Column(Integer(), primary_key=True)
+    # HACK: Default id is set to random int (no auto-generated unique IDs)
+    id = Column(Integer(), default=get_random_unique_id, primary_key=True)
     conn_id = Column(String(ID_LEN))
     conn_type = Column(String(500))
     host = Column(String(500))
@@ -863,8 +871,8 @@ class DagPickle(Base):
     The executors pick up the DagPickle id and read the dag definition from
     the database.
     """
-    id = Column(Integer, primary_key=True)
-    pickle = Column(PickleType(pickler=dill))
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
+    pickle = Column(PotentialBase64PickleType(pickler=dill))
     created_dttm = Column(UtcDateTime, default=timezone.utcnow)
     pickle_hash = Column(Text)
 
@@ -912,7 +920,7 @@ class TaskInstance(Base, LoggingMixin):
     operator = Column(String(1000))
     queued_dttm = Column(UtcDateTime)
     pid = Column(Integer)
-    executor_config = Column(PickleType(pickler=dill))
+    executor_config = Column(PotentialBase64PickleType(pickler=dill))
 
     __table_args__ = (
         Index('ti_dag_state', dag_id, state),
@@ -2138,7 +2146,8 @@ class TaskFail(Base):
 
     __tablename__ = "task_fail"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     task_id = Column(String(ID_LEN), nullable=False)
     dag_id = Column(String(ID_LEN), nullable=False)
     execution_date = Column(UtcDateTime, nullable=False)
@@ -2170,7 +2179,8 @@ class TaskReschedule(Base):
 
     __tablename__ = "task_reschedule"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     task_id = Column(String(ID_LEN), nullable=False)
     dag_id = Column(String(ID_LEN), nullable=False)
     execution_date = Column(UtcDateTime, nullable=False)
@@ -2230,7 +2240,8 @@ class Log(Base):
 
     __tablename__ = "log"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     dttm = Column(UtcDateTime)
     dag_id = Column(String(ID_LEN))
     task_id = Column(String(ID_LEN))
@@ -4558,7 +4569,8 @@ class DAG(BaseDag, LoggingMixin):
 class Chart(Base):
     __tablename__ = "chart"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: Default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     label = Column(String(200))
     conn_id = Column(String(ID_LEN), nullable=False)
     user_id = Column(Integer(), ForeignKey('users.id'), nullable=True)
@@ -4583,7 +4595,8 @@ class Chart(Base):
 class KnownEventType(Base):
     __tablename__ = "known_event_type"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default id is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     know_event_type = Column(String(200))
 
     def __repr__(self):
@@ -4593,7 +4606,8 @@ class KnownEventType(Base):
 class KnownEvent(Base):
     __tablename__ = "known_event"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default id is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     label = Column(String(200))
     start_date = Column(UtcDateTime)
     end_date = Column(UtcDateTime)
@@ -4614,7 +4628,8 @@ class KnownEvent(Base):
 class Variable(Base, LoggingMixin):
     __tablename__ = "variable"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     key = Column(String(ID_LEN), unique=True)
     _val = Column('val', Text)
     is_encrypted = Column(Boolean, unique=False, default=False)
@@ -4713,7 +4728,8 @@ class XCom(Base, LoggingMixin):
     """
     __tablename__ = "xcom"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     key = Column(String(512))
     value = Column(LargeBinary)
     timestamp = Column(
@@ -5024,7 +5040,8 @@ class DagRun(Base, LoggingMixin):
     ID_PREFIX = 'scheduled__'
     ID_FORMAT_PREFIX = ID_PREFIX + '{0}'
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default id is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     dag_id = Column(String(ID_LEN))
     execution_date = Column(UtcDateTime, default=timezone.utcnow)
     start_date = Column(UtcDateTime, default=timezone.utcnow)
@@ -5032,7 +5049,7 @@ class DagRun(Base, LoggingMixin):
     _state = Column('state', String(50), default=State.RUNNING)
     run_id = Column(String(ID_LEN))
     external_trigger = Column(Boolean, default=True)
-    conf = Column(PickleType)
+    conf = Column(PotentialBase64PickleType)
 
     dag = None
 
@@ -5415,7 +5432,8 @@ class DagRun(Base, LoggingMixin):
 class Pool(Base):
     __tablename__ = "slot_pool"
 
-    id = Column(Integer, primary_key=True)
+    # HACK: default ID is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     pool = Column(String(50), unique=True)
     slots = Column(Integer, default=0)
     description = Column(Text)
@@ -5495,7 +5513,8 @@ class SlaMiss(Base):
 
 class ImportError(Base):
     __tablename__ = "import_error"
-    id = Column(Integer, primary_key=True)
+    # HACK: default id is random
+    id = Column(Integer, default=get_random_unique_id, primary_key=True)
     timestamp = Column(UtcDateTime)
     filename = Column(String(1024))
     stacktrace = Column(Text)
@@ -5553,3 +5572,4 @@ class KubeWorkerIdentifier(Base):
                 KubeWorkerIdentifier.worker_uuid: worker_uuid
             })
             session.commit()
+

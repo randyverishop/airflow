@@ -74,8 +74,8 @@ class BaseJob(Base, LoggingMixin):
     """
 
     __tablename__ = "job"
-
-    id = Column(Integer, primary_key=True)
+    # HACK: default id is random
+    id = Column(Integer, default=models.get_random_unique_id, primary_key=True)
     dag_id = Column(String(ID_LEN),)
     state = Column(String(20))
     job_type = Column(String(30))

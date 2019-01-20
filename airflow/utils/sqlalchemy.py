@@ -29,13 +29,15 @@ import time
 import random
 
 from sqlalchemy import event, exc, select
-from sqlalchemy.types import DateTime, TypeDecorator
+from sqlalchemy.types import DateTime, TypeDecorator, PickleType
 
 from airflow.utils.log.logging_mixin import LoggingMixin
 
 log = LoggingMixin().log
 utc = pendulum.timezone('UTC')
 
+import base64
+from pickle import UnpicklingError
 
 def setup_event_handlers(engine,
                          reconnect_timeout_seconds,
@@ -169,3 +171,26 @@ class UtcDateTime(TypeDecorator):
                 value = value.astimezone(utc)
 
         return value
+
+
+# HACK: We should find a better way to decode BASE64 encoded binary value stored in Spanner  database
+class PotentialBase64PickleType(PickleType):
+    def result_processor(self, dialect, coltype):
+        impl_processor = self.impl.result_processor(dialect, coltype)
+        loads = self.pickler.loads
+        if impl_processor:
+            def process(value):
+                value = impl_processor(value)
+                if value is None:
+                    return None
+                try:
+                    return loads(value)
+                except UnpicklingError:
+                    return loads(base64.decodebytes(value))
+
+        else:
+            def process(value):
+                if value is None:
+                    return None
+                return loads(value)
+        return process
