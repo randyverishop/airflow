@@ -20,4 +20,27 @@
 
 set -exuo pipefail
 
+DOCKERHUB_IMAGE=airflow
+DOCKERHUB_USER=potiuk
 
+TRAVIS_TAG=${TRAVIS_TAG:=}
+
+IMAGE_TAG=${TRAVIS_PULL_REQUEST_BRANCH:=latest}
+
+TRAVIS_CI_IMAGE=${DOCKERHUB_USER}/${DOCKERHUB_IMAGE}:airflow-travis-ci
+CURRENT_CI_IMAGE=${DOCKERHUB_USER}/${DOCKERHUB_IMAGE}:current-ci
+
+# Pull the image for image currently built if it exists
+docker pull ${TRAVIS_CI_IMAGE} || true
+
+DOCKERFILE_PATH=scripts/ci/Dockerfile
+
+echo "Enabling cache"
+CACHE_SPEC="--cache-from ${TRAVIS_CI_IMAGE}"
+
+# Build the image using cached versions if present - both the branch/tag version and latest build can be used
+# as cache source - docker will choose appropriate cache based on hashes of the files changed
+docker build --pull --build-arg AIRFLOW_TAG=${TRAVIS_TAG} -f ${DOCKERFILE_PATH} -t ${CURRENT_CI_IMAGE} \
+        ${CACHE_SPEC} .
+
+echo "Build finished"

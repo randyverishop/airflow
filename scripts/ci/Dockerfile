@@ -82,9 +82,6 @@ RUN apt-get update \
         libsasl2-dev libsasl2-modules locales \
     && apt-get clean
 
-# Add nodejs repo and key
-ADD scripts/ci/nodesource.gpg.key /tmp/nodesource.gpg.key
-RUN apt-key add /tmp/nodesource.gpg.key
 RUN echo 'deb http://deb.nodesource.com/node_8.x bionic main' > /etc/apt/sources.list.d/nodesource.list
 RUN echo 'deb-src http://deb.nodesource.com/node_8.x bionic main' >> /etc/apt/sources.list.d/nodesource.list
 
@@ -103,34 +100,34 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
 
 ENV HADOOP_VERSION 2.6.0
 ENV HADOOP_DISTRO=cdh
-ENV HADOOP_HOME=/tmp/hadoop-${HADOOP_DISTRO}
-ENV HIVE_HOME=/tmp/hive
+ENV HADOOP_HOME=/opt/hadoop-${HADOOP_DISTRO}
+ENV HIVE_HOME=/opt/hive
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 
 RUN  mkdir ${HADOOP_HOME} && \
      mkdir ${HIVE_HOME}  && \
-     mkdir /tmp/minicluster  && \
+     mkdir /opt/minicluster  && \
      mkdir -p /user/hive/warehouse && \
      chmod -R 777 ${HIVE_HOME} && \
      chmod -R 777 /user/
 
 # Install Hadoop
 # --absolute-names is a work around to avoid this issue https://github.com/docker/hub-feedback/issues/727
-RUN cd /tmp && \
+RUN cd /opt && \
     wget -q https://archive.cloudera.com/cdh5/cdh/5/hadoop-${HADOOP_VERSION}-cdh5.11.0.tar.gz && \
     tar xzf hadoop-${HADOOP_VERSION}-cdh5.11.0.tar.gz --absolute-names --strip-components 1 -C $HADOOP_HOME && \
     rm hadoop-${HADOOP_VERSION}-cdh5.11.0.tar.gz
 
 # Install Hive
-RUN cd /tmp && \
+RUN cd /opt && \
     wget -q https://archive.cloudera.com/cdh5/cdh/5/hive-1.1.0-cdh5.11.0.tar.gz && \
     tar xzf hive-1.1.0-cdh5.11.0.tar.gz --strip-components 1 -C $HIVE_HOME && \
     rm hive-1.1.0-cdh5.11.0.tar.gz
 
 # Install MiniCluster
-RUN cd /tmp && \
+RUN cd /opt && \
     wget -q https://github.com/bolkedebruin/minicluster/releases/download/1.1/minicluster-1.1-SNAPSHOT-bin.zip && \
-    unzip minicluster-1.1-SNAPSHOT-bin.zip -d /tmp && \
+    unzip minicluster-1.1-SNAPSHOT-bin.zip -d /opt && \
     rm minicluster-1.1-SNAPSHOT-bin.zip
 
 # Setup un-privileged user with passwordless sudo access.
@@ -205,6 +202,6 @@ RUN . /usr/share/virtualenvwrapper/virtualenvwrapper.sh \
 
 WORKDIR /home/airflow
 
-ENV PATH "$PATH:/tmp/hive/bin"
+ENV PATH "$PATH/opt/hive/bin"
 
 EXPOSE 8080

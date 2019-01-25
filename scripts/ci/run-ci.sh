@@ -25,41 +25,53 @@ AIRFLOW_ROOT="$DIRNAME/../.."
 
 # Fix file permissions
 sudo chown -R airflow.airflow . $HOME/.cache $HOME/.wheelhouse/ $HOME/.cache/pip
-if [ -d $HOME/.minikube ]; then
+
+if [[ -d $HOME/.minikube ]]; then
     sudo chown -R airflow.airflow $HOME/.kube $HOME/.minikube
 fi
 
-if [[ $PYTHON_VERSION == '3' ]]; then
-  PIP=pip3
-else
-  PIP=pip2
+workon ${VIRTUALENV}
+
+if [[ ${BACKEND} == MYSQL ]]; then
+  export AIRFLOW__CORE__SQL_ALCHEMY_CONN=mysql://root@mysql/airflow
+  export AIRFLOW__CELERY__RESULT_BACKEND=db+mysql://root@mysql/airflow
+elif [[ ${BACKEND} == POSTGRES ]]; then
+  export AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:airflow@postgres/airflow
+  esport AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:airflow@postgres/airflow
+elif [[ ${BACKEND} == SQLITE ]]; then
+  export AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:///${HOME}/airflow.db
+  export AIRFLOW__CORE__EXECUTOR=SequentialExecutor
 fi
 
-sudo -H $PIP install --upgrade pip
-sudo -H $PIP install tox
+cd ${AIRFLOW_ROOT} && $PIP --version && tox --version
 
-cd $AIRFLOW_ROOT && $PIP --version && tox --version
-
-if [ -z "$KUBERNETES_VERSION" ];
+if [[ -z ${KUBERNETES_VERSION} ]];
 then
-  tox -e $TOX_ENV
-else
-  # This script runs inside a container, the path of the kubernetes certificate
-  # is /home/travis/.minikube/client.crt but the user in the container is `airflow`
-  if [ ! -d /home/travis ]; then
-    sudo mkdir -p /home/travis
+  ${DIRNAME}/setup/setup-env.sh
+  ${DIRNAME}/setup/setup-kdc.sh
+  if [[ ${BACKEND} == MYSQL ]]; then
+    ${DIRNAME}/setup/setup-mysql.sh
   fi
-  sudo ln -s /home/airflow/.minikube /home/travis/.minikube
-
-  tox -e $TOX_ENV -- tests.contrib.minikube \
-                     --with-coverage \
-                     --cover-erase \
-                     --cover-html \
-                     --cover-package=airflow \
-                     --cover-html-dir=airflow/www/static/coverage \
-                     --with-ignore-docstrings \
-                     --rednose \
-                     --with-timer \
-                     -v \
-                     --logging-level=DEBUG
+  ${DIRNAME}/run-tests.sh []
+  codecov -e TOXENV=${VIRTUALENV}_${BACKEND}_${ENV}
+else
+#  # This script runs inside a container, the path of the kubernetes certificate
+#  # is /home/travis/.minikube/client.crt but the user in the container is `airflow`
+#  if [ ! -d /home/travis ]; then
+#    sudo mkdir -p /home/travis
+#  fi
+#  sudo ln -s /home/airflow/.minikube /home/travis/.minikube
+#
+#  tox -e $TOX_ENV -- tests.contrib.minikube \
+#                     --with-coverage \
+#                     --cover-erase \
+#                     --cover-html \
+#                     --cover-package=airflow \
+#                     --cover-html-dir=airflow/www/static/coverage \
+#                     --with-ignore-docstrings \
+#                     --rednose \
+#                     --with-timer \
+#                     -v \
+#                     --logging-level=DEBUG
+    echo
 fi

@@ -93,8 +93,4 @@ services:
       - redis
       - openldap
       - krb5-kdc-server
-    volumes:
-      - ../../:/app
-      - ~/.cache/pip:/home/airflow/.cache/pip
-      - ~/.wheelhouse/:/home/airflow/.wheelhouse/
-    working_dir: /app
+    working_dir: /workspace

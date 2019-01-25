@@ -24,21 +24,23 @@ python:
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.20.0
-    - SLUGIFY_USES_TEXT_UNIDECODE=yes
     - TRAVIS_CACHE=$HOME/.travis_cache/
+    - HADOOP_DISTRO=cdh
+    - HADOOP_HOME=/tmp/hadoop-cdh
+    - HADOOP_OPTS=-D/tmp/krb5.conf
+    - HIVE_HOME=/tmp/hive
+    - MINICLUSTER_HOME=/tmp/minicluster-1.1-SNAPSHOT
+    - KRB5_CONFIG=/etc/krb5.conf
+    - KRB5_KTNAME=/etc/airflow.keytab
+    - CELERY_BROKER_URLS=amqp://guest:guest@rabbitmq:5672,redis://redis:6379/0
   matrix:
-#    - TOX_ENV=py27-backend_mysql-env_docker
-#    - TOX_ENV=py27-backend_sqlite-env_docker
-#    - TOX_ENV=py27-backend_postgres-env_docker
-#    - TOX_ENV=py35-backend_mysql-env_docker PYTHON_VERSION=3
-#    - TOX_ENV=py35-backend_sqlite-env_docker PYTHON_VERSION=3
-#    - TOX_ENV=py35-backend_postgres-env_docker PYTHON_VERSION=3
+    - VIRTUALENV=airflow27 BACKEND=MYSQL ENV=DOCKER
 #    - TOX_ENV=py27-backend_postgres-env_kubernetes KUBERNETES_VERSION=v1.9.0
 #    - TOX_ENV=py35-backend_postgres-env_kubernetes KUBERNETES_VERSION=v1.10.0 PYTHON_VERSION=3
 
 stages:
 #  - pre-test
-#  - build-dockerfile
+  - build-dockerfile
   - test
 
 jobs:
@@ -48,16 +50,11 @@ jobs:
 #      script: pip install flake8 && flake8
 #    - name: Check license header
 #      stage: pre-test
-#      script: scripts/ci/6-check-license.sh
-#    - name: Build-dockerfile
-#      stage: build-dockerfile
-#      script: scripts/ci/6-check-license.sh
+#      script: scripts/ci/check-license.sh
+    - name: Build-dockerfile
+      stage: build-dockerfile
+      script: scripts/ci/prepare-dockerimage.sh
 
-cache:
-  directories:
-    - $HOME/.wheelhouse/
-    - $HOME/.cache/pip
-    - $HOME/.travis_cache/
 before_install:
   # Required for K8s v1.10.x. See
   # https://github.com/kubernetes/kubernetes/issues/61058#issuecomment-372764783
@@ -68,20 +65,17 @@ install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
-  - pip install --upgrade pip
 script:
   - if [ -z "$KUBERNETES_VERSION" ]; then docker-compose --log-level ERROR -f scripts/ci/docker-compose.yml run airflow-testing /app/scripts/ci/run-ci.sh; fi
-  - if [ ! -z "$KUBERNETES_VERSION" ]; then
-      ./scripts/ci/kubernetes/minikube/stop_minikube.sh &&
-      ./scripts/ci/kubernetes/setup_kubernetes.sh &&
-      ./scripts/ci/kubernetes/kube/deploy.sh -d persistent_mode &&
-      MINIKUBE_IP=$(minikube ip) docker-compose --log-level ERROR -f scripts/ci/docker-compose.yml -f scripts/ci/docker-compose-kubernetes.yml run airflow-testing /app/scripts/ci/run-ci.sh;
-    fi
-  - if [ ! -z "$KUBERNETES_VERSION" ]; then
-      ./scripts/ci/kubernetes/minikube/stop_minikube.sh &&
-      ./scripts/ci/kubernetes/setup_kubernetes.sh &&
-      ./scripts/ci/kubernetes/kube/deploy.sh -d git_mode &&
-      MINIKUBE_IP=$(minikube ip) docker-compose --log-level ERROR -f scripts/ci/docker-compose.yml -f scripts/ci/docker-compose-kubernetes.yml run airflow-testing /app/scripts/ci/run-ci.sh;
-    fi
-before_cache:
-  - sudo chown -R travis:travis $HOME/.cache/pip $HOME/.wheelhouse/
+#  - if [ ! -z "$KUBERNETES_VERSION" ]; then
+#      ./scripts/ci/kubernetes/minikube/stop_minikube.sh &&
+#      ./scripts/ci/kubernetes/setup_kubernetes.sh &&
+#      ./scripts/ci/kubernetes/kube/deploy.sh -d persistent_mode &&
+#      MINIKUBE_IP=$(minikube ip) docker-compose --log-level ERROR -f scripts/ci/docker-compose.yml -f scripts/ci/docker-compose-kubernetes.yml run airflow-testing /app/scripts/ci/run-ci.sh;
+#    fi
+#  - if [ ! -z "$KUBERNETES_VERSION" ]; then
+#      ./scripts/ci/kubernetes/minikube/stop_minikube.sh &&
+#      ./scripts/ci/kubernetes/setup_kubernetes.sh &&
+#      ./scripts/ci/kubernetes/kube/deploy.sh -d git_mode &&
+#      MINIKUBE_IP=$(minikube ip) docker-compose --log-level ERROR -f scripts/ci/docker-compose.yml -f scripts/ci/docker-compose-kubernetes.yml run airflow-testing /app/scripts/ci/run-ci.sh;
+#    fi
