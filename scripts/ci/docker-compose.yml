@@ -66,7 +66,7 @@ services:
     domainname: example.com
 
   airflow-testing:
-    image: airflowci/incubator-airflow-ci:latest
+    image: potiuk/airflow-travis-ci:latest
     init: true
     environment:
       - USER=airflow
