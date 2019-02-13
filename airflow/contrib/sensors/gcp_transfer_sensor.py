@@ -40,7 +40,7 @@ class GCPTransferServiceWaitForJobStatusSensor(BaseSensorOperator):
     :type gcp_conn_id: str
     """
 
-    template_fields = ('job_name', 'expected_statuses', 'gcp_conn_id', )
+    template_fields = ['job_name']
 
     @apply_defaults
     def __init__(self,

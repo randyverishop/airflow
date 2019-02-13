@@ -104,6 +104,7 @@ class TransferJobPreprocessor:
     def process_body(self):
         self._inject_aws_credentials()
         self._reformat_schedule()
+        return self.body
 
     def validate_body(self):
         self._restrict_empty_bdody()
@@ -202,9 +203,9 @@ class GcpTransferServiceJobCreateOperator(BaseOperator):
     def _validate_inputs(self):
         self._preprocessor.validate_body()
 
-    @convert_http_exception("Creating transfer job")
+    @convert_http_exception
     def execute(self, context):
-        self._preprocessor.process_body()
+        self.body = self._preprocessor.process_body()
         hook = GCPTransferServiceHook(
             api_version=self.api_version,
             gcp_conn_id=self.gcp_conn_id,
@@ -264,7 +265,7 @@ class GcpTransferServiceJobUpdateOperator(BaseOperator):
         self.gcp_conn_id = gcp_conn_id
         self.api_version = api_version
         self._preprocessor = TransferJobPreprocessor(
-            body=body['transfer_job'],
+            body=body['transferJob'],
             aws_conn_id=aws_conn_id,
         )
         self._validate_inputs()

@@ -89,17 +89,17 @@ first_transfer_create_body = {
 
 # [START howto_operator_gct_update_job_body]
 update_body = {
-    "project_id": GCP_PROJECT_ID,
-    "transfer_job": {
+    "projectId": GCP_PROJECT_ID,
+    "transferJob": {
         "description": "%s_updated" % GCP_DESCRIPTION
     },
-    "update_transfer_job_field_mask": "description"
+    "updateTransferJobFieldMask": "description"
 }
 # [END howto_operator_gct_update_job_body]
 
 list_filter_dict = {
-    "project_id": GCP_PROJECT_ID,
-    "job_names": []
+    "projectId": GCP_PROJECT_ID,
+    "jobNames": []
 }
 
 second_transfer_create_body = deepcopy(first_transfer_create_body)
