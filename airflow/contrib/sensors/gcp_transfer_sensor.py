@@ -66,8 +66,8 @@ class GCPTransferServiceWaitForJobStatusSensor(BaseSensorOperator):
             })
 
         check = GCPTransferServiceHook\
-            .check_operations_result(operations=operations,
-                                     expected_statuses=self.expected_statuses)
+            .check_operations_statuses(operations=operations,
+                                       expected_statuses=self.expected_statuses)
         if check:
             context['task_instance'].xcom_push(key="sensed_operations", value=operations)
 

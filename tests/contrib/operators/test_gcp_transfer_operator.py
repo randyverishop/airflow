@@ -98,7 +98,7 @@ SCHEDULE_DICT = {
         'hours': 11, 'minutes': 42, 'seconds': 43}
 }
 
-SOURCE_AWS = {"aws_s3_data_source": {"bucket_name": AWS_BUCKET_NAME}}
+SOURCE_AWS = {"awsS3DataSource": {"bucket_name": AWS_BUCKET_NAME}}
 SOURCE_GCS = {"gcs_data_source": {"bucket_name": GCS_BUCKET_NAME}}
 SOURCE_HTTP = {"http_data_source": {"list_url": "http://example.com"}}
 
@@ -107,21 +107,21 @@ VALID_TRANSFER_JOB_BASE = {
     'description': DESCRIPTION,
     'status': 'ENABLED',
     'schedule': SCHEDULE_NATIVE,
-    'transfer_spec': {
+    'transferSpec': {
         'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
     }
 }
 VALID_TRANSFER_JOB_GCS = deepcopy(VALID_TRANSFER_JOB_BASE)
-VALID_TRANSFER_JOB_GCS['transfer_spec'].update(SOURCE_GCS)
+VALID_TRANSFER_JOB_GCS['transferSpec'].update(SOURCE_GCS)
 VALID_TRANSFER_JOB_AWS = deepcopy(VALID_TRANSFER_JOB_BASE)
-VALID_TRANSFER_JOB_AWS['transfer_spec'].update(deepcopy(SOURCE_AWS))
+VALID_TRANSFER_JOB_AWS['transferSpec'].update(deepcopy(SOURCE_AWS))
 
 VALID_TRANSFER_JOB_GCS = {
     "name": JOB_NAME,
     'description': DESCRIPTION,
     'status': 'ENABLED',
     'schedule': SCHEDULE_NATIVE,
-    'transfer_spec': {
+    'transferSpec': {
         "gcs_data_source": {"bucket_name": GCS_BUCKET_NAME},
         'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
     }
@@ -131,16 +131,16 @@ VALID_TRANSFER_JOB_RAW = {
     'description': DESCRIPTION,
     'status': 'ENABLED',
     'schedule': SCHEDULE_DICT,
-    'transfer_spec': {
+    'transferSpec': {
         'gcs_data_sink': {'bucket_name': GCS_BUCKET_NAME}
     }
 }
 
 VALID_TRANSFER_JOB_GCS_RAW = deepcopy(VALID_TRANSFER_JOB_RAW)
-VALID_TRANSFER_JOB_GCS_RAW['transfer_spec'].update(SOURCE_GCS)
+VALID_TRANSFER_JOB_GCS_RAW['transferSpec'].update(SOURCE_GCS)
 VALID_TRANSFER_JOB_AWS_RAW = deepcopy(VALID_TRANSFER_JOB_RAW)
-VALID_TRANSFER_JOB_AWS_RAW['transfer_spec'].update(deepcopy(SOURCE_AWS))
-VALID_TRANSFER_JOB_AWS_RAW['transfer_spec']['aws_s3_data_source']['aws_access_key'] = AWS_ACCESS_KEY
+VALID_TRANSFER_JOB_AWS_RAW['transferSpec'].update(deepcopy(SOURCE_AWS))
+VALID_TRANSFER_JOB_AWS_RAW['transferSpec']['awsS3DataSource']['awsAccessKey'] = AWS_ACCESS_KEY
 
 
 VALID_OPERATION = {
@@ -165,13 +165,13 @@ class TransferJobPreprocessorTest(unittest.TestCase):
             Credentials(AWS_ACCESS_KEY_ID, AWS_ACCESS_SECRET, None)
 
         body = {
-            'transfer_spec': deepcopy(SOURCE_AWS)
+            'transferSpec': deepcopy(SOURCE_AWS)
         }
-        TransferJobPreprocessor(
+        body = TransferJobPreprocessor(
             body=body
         ).process_body()
-        self.assertEqual(body['transfer_spec']
-                         ['aws_s3_data_source']['aws_access_key'], AWS_ACCESS_KEY)
+        self.assertEqual(body['transferSpec']
+                         ['awsS3DataSource']['awsAccessKey'], AWS_ACCESS_KEY)
 
     @parameterized.expand([
         ('schedule_start_date',),
@@ -201,9 +201,9 @@ class TransferJobPreprocessorTest(unittest.TestCase):
 
     def test_should_raise_exception_when_encounters_aws_credentials(self):
         body = {
-            "transfer_spec": {
-                "aws_s3_data_source": {
-                    "aws_access_key": AWS_ACCESS_KEY
+            "transferSpec": {
+                "awsS3DataSource": {
+                    "awsAccessKey": AWS_ACCESS_KEY
                 },
             }
         }
@@ -232,7 +232,7 @@ class TransferJobPreprocessorTest(unittest.TestCase):
     ])
     def test_verify_data_source(self, transferSpec):
         body = {
-            'transfer_spec': transferSpec
+            'transferSpec': transferSpec
         }
 
         with self.assertRaises(AirflowException) as cm:

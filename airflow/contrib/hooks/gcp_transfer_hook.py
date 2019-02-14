@@ -145,7 +145,7 @@ class GCPTransferServiceHook(GoogleCloudBaseHook):
 
         while request is not None:
             response = request.execute(num_retries=NUM_RETRIES)
-            jobs.extend(response['transfer_jobs'])
+            jobs.extend(response['transferJobs'])
 
             request = conn.transferJobs().list_next(
                 previous_request=request,
@@ -310,7 +310,7 @@ class GCPTransferServiceHook(GoogleCloudBaseHook):
                 'job_names': [job['name']]
             })
 
-            if GCPTransferServiceHook.check_operation_statuses(operations,
+            if GCPTransferServiceHook.check_operations_statuses(operations,
                                                                expected_status):
                 return
             time.sleep(TIME_TO_SLEEP_IN_SECONDS)
@@ -326,7 +326,7 @@ class GCPTransferServiceHook(GoogleCloudBaseHook):
         return body
 
     @staticmethod
-    def check_operations_result(operations, expected_statuses):
+    def check_operations_statuses(operations, expected_statuses):
         """
         Checks whether the operation list has an operation with the
         expected status, then returns true
