@@ -1071,6 +1071,12 @@ These integrations allow you to perform various operations using various softwar
      - :mod:`airflow.operators.sqlite_operator`
      -
 
+   * - `Singularity <https://sylabs.io/docs/>`__
+     -
+     -
+     - :mod:`airflow.contrib.operators.singularity_operator`
+     -
+
 
 Transfer operators and hooks
 ''''''''''''''''''''''''''''

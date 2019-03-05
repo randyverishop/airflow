@@ -254,6 +254,7 @@ samba = ['pysmbclient>=0.1.3']
 segment = ['analytics-python>=1.2.9']
 sendgrid = ['sendgrid>=5.2.0,<6']
 sentry = ['sentry-sdk>=0.8.0', "blinker>=1.1"]
+singularity = ['spython>=0.0.56']
 slack = ['slackclient>=1.0.0,<2.0.0']
 mongo = ['pymongo>=3.6.0', 'dnspython>=1.13.0,<2.0.0']
 snowflake = ['snowflake-connector-python>=1.5.2',
@@ -315,7 +316,7 @@ else:
 
 devel_minreq = devel + kubernetes + mysql + doc + password + cgroups
 devel_hadoop = devel_minreq + hive + hdfs + webhdfs + kerberos
-devel_all = (sendgrid + devel + all_dbs + doc + samba + slack + oracle +
+devel_all = (sendgrid + devel + all_dbs + doc + samba + slack + singularity + oracle +
              docker + ssh + kubernetes + celery + redis + gcp + grpc +
              datadog + zendesk + jdbc + ldap + kerberos + password + webhdfs + jenkins +
              druid + pinot + segment + snowflake + elasticsearch + sentry +
@@ -450,6 +451,7 @@ def do_setup():
             'sendgrid': sendgrid,
             'sentry': sentry,
             'segment': segment,
+            'singularity': singularity,
             'slack': slack,
             'snowflake': snowflake,
             'ssh': ssh,
