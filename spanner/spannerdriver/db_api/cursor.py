@@ -8,17 +8,17 @@ import sys
 from os.path import basename
 
 # noinspection PyPackageRequirements
-from google.cloud.spanner_v1.param_types import STRING, INT64, FLOAT64, BYTES, BOOE, \
+from google.cloud.spanner_v1.param_types import STRING, INT64, FLOAT64, BYTES, BOOL as BOOE, \
     TIMESTAMP, DATE
 
 # noinspection PyPackageRequirements
 from google.cloud.spanner_v1.proto import type_pb2
 
-from spannerdriver.db_api import exceptions
+from spanner.spannerdriver.db_api import exceptions
 # noinspection PyPackageRequirements
 from google.api_core.exceptions import InvalidArgument
 # noinspection PyPackageRequirements
-from spannerdriver.db_api.connection import Connection
+from spanner.spannerdriver.db_api.connection import Connection
 logger = logging.getLogger('spanner.db_api.%s' %
                            basename(__file__).split('.')[0])
 
@@ -264,8 +264,23 @@ class Cursor(object):
         elif operation_type == 'DDL':
             self._execute_ddl(operation)
 
+
+    # noinspection PyUnusedLocal
+    # HACK
+    def execute_django(self, operation, parameters=None, job_id=None):
+        def quote(val):
+            if isinstance(val, str):
+                return "'{}'".format(val)
+            return val
+        parameters = [quote(param) for param in parameters] #quote params
+        operation = operation % tuple(parameters)
+        print(operation)
+        self._run_operation(operation)
+
     # noinspection PyUnusedLocal
     def execute(self, operation, parameters=None, job_id=None):
+        if isinstance(parameters, list) or isinstance(parameters, tuple): # Django call
+            return self.execute_django(operation, parameters)
         try:
             spanner_param_types = {}
             spanner_param_values = {}

@@ -10,12 +10,14 @@ class Connection(object):
     """DB-API Connection to Cloud Spanner.
     """
 
-    def __init__(self, project_id, instance_id, database_id):
-        pass
+    def __init__(self, project_id, instance_id, database_id, credentials_path=None):
         # noinspection PyUnresolvedReferences
-        credentials, _ = google.auth.default(scopes=_DEFAULT_SCOPES)
+        if credentials_path:
+            self.client = Client.from_service_account_json(credentials_path)
+        else:
+            credentials, _ = google.auth.default(scopes=_DEFAULT_SCOPES)
+            self.client = Client(project=project_id, credentials=credentials)
 
-        self.client = Client(project=project_id, credentials=credentials)
         self.instance = self.client.instance(instance_id=instance_id)
         self.database = self.instance.database(database_id=database_id)
 
@@ -31,6 +33,9 @@ class Connection(object):
     def cursor(self):
         from .cursor import Cursor
         return Cursor(self)
+
+    def operators(self):
+        return {}
 
 
 def connect(**kwargs):
