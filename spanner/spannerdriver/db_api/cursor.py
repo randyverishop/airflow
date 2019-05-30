@@ -8,7 +8,7 @@ import sys
 from os.path import basename
 
 # noinspection PyPackageRequirements
-from google.cloud.spanner_v1.param_types import STRING, INT64, FLOAT64, BYTES, BOOE, \
+from google.cloud.spanner_v1.param_types import STRING, INT64, FLOAT64, BYTES, BOOL, \
     TIMESTAMP, DATE
 
 # noinspection PyPackageRequirements
@@ -74,10 +74,10 @@ KNOWN_PARAM_TYPES = {
     'schema': STRING,
     'last_pickled': TIMESTAMP,
     'last_expired': TIMESTAMP,
-    'scheduler_lock': BOOE,
+    'scheduler_lock': BOOL,
     'pickle_id': INT64,
-    'y_log_scale': BOOE,
-    'show_datatable': BOOE,
+    'y_log_scale': BOOL,
+    'show_datatable': BOOL,
     'user_id': INT64,
     'dag_id': STRING,
     'task_id': STRING,

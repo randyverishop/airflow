@@ -19,7 +19,7 @@ with those prerequisites:
 
 * Install airflow dependencies. In the root of `incubator-airflow` project run:
 ```bash
- pip install -e .[devel_all]
+ pip install -e .[devel_all,gcp_api]
 ```  
 Note that depending on the OS (MacOS, Linux) - you might need to have several extra
 dependencies needed - usually you can install then via apt-get (Linux) or brew (MacOS).
@@ -55,7 +55,7 @@ pip install -e .
 
 Copy [spanner_airflow_plugin.py](spanner_airflow_plugin.py) to 
 `${AIRFLOW_HOME}/airflow/plugins`. If you have no AIRFLOW_HOME variable defined then
-do it in #
+do it in ${HOME}/airflow/plugins
 
 # Testing
 
