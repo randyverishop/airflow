@@ -112,7 +112,7 @@ class Cursor(object):
             return STRING
         if isinstance(param_value, bool):
             # error in name of Spanner param types :)
-            return BOOE
+            return BOOL
         if isinstance(param_value, int):
             return INT64
         if isinstance(param_value, float):
