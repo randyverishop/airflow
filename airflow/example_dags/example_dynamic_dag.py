@@ -37,3 +37,5 @@ for i in range(10):
     other_dag_id = f'bar_{i}'
     globals()[other_dag_id] = create_dag(other_dag_id)
 # [END faq_dynamic_dag]
+
+globals()[f'foo_{5}'].cli()
