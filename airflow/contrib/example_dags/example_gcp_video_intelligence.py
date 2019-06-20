@@ -66,7 +66,6 @@ with models.DAG(
         input_uri=INPUT_URI,
         output_uri=None,
         video_context=None,
-        timeout=5,
         task_id="detect_video_label",
     )
     # [END howto_operator_video_intelligence_detect_labels]
@@ -85,7 +84,6 @@ with models.DAG(
         output_uri=None,
         video_context=None,
         retry=Retry(maximum=10.0),
-        timeout=5,
         task_id="detect_video_explicit_content",
     )
     # [END howto_operator_video_intelligence_detect_explicit_content]
@@ -104,7 +102,6 @@ with models.DAG(
         output_uri=None,
         video_context=None,
         retry=Retry(maximum=10.0),
-        timeout=5,
         task_id="detect_video_shots",
     )
     # [END howto_operator_video_intelligence_detect_video_shots]
