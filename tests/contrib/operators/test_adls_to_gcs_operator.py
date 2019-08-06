@@ -19,7 +19,6 @@
 
 import unittest
 
-from airflow.contrib.hooks.gcs_hook import _parse_gcs_url
 from airflow.contrib.operators.adls_to_gcs import \
     AdlsToGoogleCloudStorageOperator
 from tests.compat import mock
@@ -76,8 +75,18 @@ class AdlsToGoogleCloudStorageOperatorTest(unittest.TestCase):
         uploaded_files = operator.execute(None)
         gcs_mock_hook.return_value.upload.assert_has_calls(
             [
-                mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/PARQUET.parquet', gzip=True),
-                mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/TEST3.csv', gzip=True),
+                mock.call(
+                    bucket_name='test',
+                    filename=mock.ANY,
+                    object_name='test/path/PARQUET.parquet',
+                    gzip=True
+                ),
+                mock.call(
+                    bucket_name='test',
+                    filename=mock.ANY,
+                    object_name='test/path/TEST3.csv',
+                    gzip=True
+                ),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/PIC.png', gzip=True),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/TEST1.csv', gzip=True),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/TEST2.csv', gzip=True)
@@ -116,8 +125,18 @@ class AdlsToGoogleCloudStorageOperatorTest(unittest.TestCase):
         uploaded_files = operator.execute(None)
         gcs_mock_hook.return_value.upload.assert_has_calls(
             [
-                mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/PARQUET.parquet', gzip=True),
-                mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/TEST3.csv', gzip=True),
+                mock.call(
+                    bucket_name='test',
+                    filename=mock.ANY,
+                    object_name='test/path/PARQUET.parquet',
+                    gzip=True
+                ),
+                mock.call(
+                    bucket_name='test',
+                    filename=mock.ANY,
+                    object_name='test/path/TEST3.csv',
+                    gzip=True
+                ),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/path/PIC.png', gzip=True),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/TEST1.csv', gzip=True),
                 mock.call(bucket_name='test', filename=mock.ANY, object_name='test/TEST2.csv', gzip=True)
