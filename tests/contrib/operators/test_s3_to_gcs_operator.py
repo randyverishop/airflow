@@ -19,7 +19,6 @@
 
 import unittest
 
-from airflow.contrib.hooks.gcs_hook import _parse_gcs_url
 from airflow.contrib.operators.s3_to_gcs_operator import \
     S3ToGoogleCloudStorageOperator
 from tests.compat import mock
@@ -108,7 +107,7 @@ class S3ToGoogleCloudStorageOperatorTest(unittest.TestCase):
         s3_one_mock_hook.return_value.list_keys.return_value = MOCK_FILES
         s3_two_mock_hook.return_value.list_keys.return_value = MOCK_FILES
 
-        uploaded_files = operator.execute(None)
+        operator.execute(None)
         gcs_mock_hook.return_value.upload.assert_has_calls(
             [
                 mock.call('gcs-bucket', 'data/TEST2.csv', mock.ANY, gzip=True),
