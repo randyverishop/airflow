@@ -18,6 +18,7 @@
 # under the License.
 
 import os
+import warnings
 from tempfile import NamedTemporaryFile
 
 from airflow.contrib.hooks.azure_data_lake_hook import AzureDataLakeHook
@@ -40,8 +41,10 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
     :param azure_data_lake_conn_id: The connection ID to use when
         connecting to Azure Data Lake Storage.
     :type azure_data_lake_conn_id: str
-    :param google_cloud_storage_conn_id: The connection ID to use when
-        connecting to Google Cloud Storage.
+    :param gcp_conn_id: (Optional) The connection ID used to connect to Google Cloud Platform.
+    :type gcp_conn_id: str
+    :param google_cloud_storage_conn_id: (Deprecated) The connection ID used to connect to Google Cloud
+        Platform. This parameter has been deprecated. You should pass the gcp_conn_id parameter instead.
     :type google_cloud_storage_conn_id: str
     :param delegate_to: The account to impersonate, if any.
         For this to work, the service account making the request must have
@@ -59,7 +62,7 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
                 dest_gcs='gs://mybucket',
                 replace=False,
                 azure_data_lake_conn_id='azure_data_lake_default',
-                google_cloud_storage_conn_id='google_cloud_default'
+                gcp_conn_id='google_cloud_default'
             )
 
         The following Operator would copy all parquet files from ADLS
@@ -71,7 +74,7 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
                 dest_gcs='gs://mybucket',
                 replace=False,
                 azure_data_lake_conn_id='azure_data_lake_default',
-                google_cloud_storage_conn_id='google_cloud_default'
+                gcp_conn_id='google_cloud_default'
             )
 
          The following Operator would copy all parquet files from ADLS
@@ -83,7 +86,7 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
                 dest_gcs='gs://mybucket',
                 replace=False,
                 azure_data_lake_conn_id='azure_data_lake_default',
-                google_cloud_storage_conn_id='google_cloud_default'
+                gcp_conn_id='google_cloud_default'
             )
     """
     template_fields = ('src_adls', 'dest_gcs')
@@ -94,7 +97,8 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
                  src_adls,
                  dest_gcs,
                  azure_data_lake_conn_id,
-                 google_cloud_storage_conn_id,
+                 gcp_conn_id='google_cloud_default',
+                 google_cloud_storage_conn_id=None,
                  delegate_to=None,
                  replace=False,
                  *args,
@@ -106,17 +110,24 @@ class AdlsToGoogleCloudStorageOperator(AzureDataLakeStorageListOperator):
             *args,
             **kwargs
         )
+
+        if google_cloud_storage_conn_id:
+            warnings.warn(
+                "The google_cloud_storage_conn_id parameter has been deprecated. You should pass "
+                "the gcp_conn_id parameter.", DeprecationWarning, stacklevel=3)
+            gcp_conn_id = google_cloud_storage_conn_id
+
         self.src_adls = src_adls
         self.dest_gcs = dest_gcs
         self.replace = replace
-        self.google_cloud_storage_conn_id = google_cloud_storage_conn_id
+        self.gcp_conn_id = gcp_conn_id
         self.delegate_to = delegate_to
 
     def execute(self, context):
         # use the super to list all files in an Azure Data Lake path
         files = super().execute(context)
         g_hook = GoogleCloudStorageHook(
-            google_cloud_storage_conn_id=self.google_cloud_storage_conn_id,
+            google_cloud_storage_conn_id=self.gcp_conn_id,
             delegate_to=self.delegate_to)
 
         if not self.replace:
