@@ -146,5 +146,6 @@ class AdlsToGoogleCloudStorageOperatorTest(unittest.TestCase):
         # we expect MOCK_FILES to be uploaded
         self.assertEqual(sorted(MOCK_FILES), sorted(uploaded_files))
 
+
 if __name__ == '__main__':
     unittest.main()
