@@ -78,7 +78,7 @@ class GoogleCloudStorageToS3Operator(GoogleCloudStorageListOperator):
     ui_color = '#f0eee4'
 
     @apply_defaults
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-arguments
                  bucket,
                  prefix=None,
                  delimiter=None,
