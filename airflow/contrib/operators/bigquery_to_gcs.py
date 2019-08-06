@@ -71,7 +71,7 @@ class BigQueryToCloudStorageOperator(BaseOperator):
     ui_color = '#e4e6f0'
 
     @apply_defaults
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-arguments
                  source_project_dataset_table,
                  destination_cloud_storage_uris,
                  compression='NONE',
