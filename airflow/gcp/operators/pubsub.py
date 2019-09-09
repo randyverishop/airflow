@@ -19,7 +19,10 @@
 """
 This module contains Google PubSub operators.
 """
-from typing import List, Optional
+from typing import List, Optional, Sequence, Tuple, Dict, Union
+
+from google.api_core.retry import Retry
+from google.cloud.pubsub_v1 import types
 
 from airflow.gcp.hooks.pubsub import PubSubHook
 from airflow.models import BaseOperator
@@ -70,10 +73,34 @@ class PubSubTopicCreateOperator(BaseOperator):
         For this to work, the service account making the request
         must have domain-wide delegation enabled.
     :type delegate_to: str
+    :param labels: Client-assigned labels; see
+        https://cloud.google.com/pubsub/docs/labels
+    :type labels: Dict[str, str]
+    :param message_storage_policy: Policy constraining the set
+        of Google Cloud Platform regions where messages published to
+        the topic may be stored. If not present, then no constraints
+        are in effect.
+    :type message_storage_policy:
+        Union[Dict, google.cloud.pubsub_v1.types.MessageStoragePolicy]
+    :param kms_key_name: The resource name of the Cloud KMS CryptoKey
+        to be used to protect access to messages published on this topic.
+        The expected format is
+        ``projects/*/locations/*/keyRings/*/cryptoKeys/*``.
+    :type kms_key_name: str
+    :param retry: (Optional) A retry object used to retry requests.
+    If None is specified, requests will not be retried.
+    :type retry: google.api_core.retry.Retry
+    :param timeout: (Optional) The amount of time, in seconds, to wait for the request
+        to complete. Note that if retry is specified, the timeout applies to each
+        individual attempt.
+    :type timeout: float
+    :param metadata: (Optional) Additional metadata that is provided to the method.
+    :type metadata: Sequence[Tuple[str, str]]]
     """
     template_fields = ['project', 'topic']
     ui_color = '#0273d4'
 
+    # pylint: disable=too-many-arguments
     @apply_defaults
     def __init__(
             self,
@@ -82,6 +109,12 @@ class PubSubTopicCreateOperator(BaseOperator):
             fail_if_exists: bool = False,
             gcp_conn_id: str = 'google_cloud_default',
             delegate_to: Optional[str] = None,
+            labels: Optional[Dict[str, str]] = None,
+            message_storage_policy: Union[Dict, types.MessageStoragePolicy] = None,  # noqa E501 # pylint: disable=no-member,line-too-long
+            kms_key_name: Optional[str] = None,
+            retry: Optional[Retry] = None,
+            timeout: Optional[float] = None,
+            metadata: Optional[Sequence[Tuple[str, str]]] = None,
             *args,
             **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -91,13 +124,28 @@ class PubSubTopicCreateOperator(BaseOperator):
         self.fail_if_exists = fail_if_exists
         self.gcp_conn_id = gcp_conn_id
         self.delegate_to = delegate_to
+        self.labels = labels
+        self.message_storage_policy = message_storage_policy
+        self.kms_key_name = kms_key_name
+        self.retry = retry
+        self.timeout = timeout
+        self.metadata = metadata
 
     def execute(self, context):
         hook = PubSubHook(gcp_conn_id=self.gcp_conn_id,
                           delegate_to=self.delegate_to)
 
-        hook.create_topic(self.project, self.topic,
-                          fail_if_exists=self.fail_if_exists)
+        hook.create_topic(
+            project=self.project,
+            topic=self.topic,
+            fail_if_exists=self.fail_if_exists,
+            labels=self.labels,
+            message_storage_policy=self.message_storage_policy,
+            kms_key_name=self.kms_key_name,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata
+        )
 
 
 class PubSubSubscriptionCreateOperator(BaseOperator):
@@ -170,11 +218,41 @@ class PubSubSubscriptionCreateOperator(BaseOperator):
         For this to work, the service account making the request
         must have domain-wide delegation enabled.
     :type delegate_to: str
+    :param push_config: If push delivery is used with this subscription,
+        this field is used to configure it. An empty ``pushConfig`` signifies
+        that the subscriber will pull and ack messages using API methods.
+    :type push_config: Union[Dict, google.cloud.pubsub_v1.types.PushConfig]
+    :param retain_acked_messages: Indicates whether to retain acknowledged
+        messages. If true, then messages are not expunged from the subscription's
+         backlog, even if they are acknowledged, until they fall out of the
+         ``message_retention_duration`` window. This must be true if you would
+        like to Seek to a timestamp.
+    :type retain_acked_messages: bool
+    :param message_retention_duration: How long to retain unacknowledged messages
+        in the subscription's backlog, from the moment a message is published. If
+        ``retain_acked_messages`` is true, then this also configures the
+        retention of acknowledged messages, and thus configures how far back in
+        time a ``Seek`` can be done. Defaults to 7 days. Cannot be more than 7
+        days or less than 10 minutes.
+    :type message_retention_duration: Union[Dict, google.cloud.pubsub_v1.types.Duration]
+    :param labels: Client-assigned labels; see
+        https://cloud.google.com/pubsub/docs/labels
+    :type labels: Dict[str, str]
+    :param retry: (Optional) A retry object used to retry requests.
+        If None is specified, requests will not be retried.
+    :type retry: google.api_core.retry.Retry
+    :param timeout: (Optional) The amount of time, in seconds, to wait for the request
+        to complete. Note that if retry is specified, the timeout applies to each
+        individual attempt.
+    :type timeout: float
+    :param metadata: (Optional) Additional metadata that is provided to the method.
+    :type metadata: Sequence[Tuple[str, str]]]
     """
     template_fields = ['topic_project', 'topic', 'subscription',
                        'subscription_project']
     ui_color = '#0273d4'
 
+    # pylint: disable=too-many-arguments
     @apply_defaults
     def __init__(
             self,
@@ -186,6 +264,13 @@ class PubSubSubscriptionCreateOperator(BaseOperator):
             fail_if_exists: bool = False,
             gcp_conn_id: str = 'google_cloud_default',
             delegate_to: Optional[str] = None,
+            push_config: Optional[Union[Dict, types.PushConfig]] = None,  # pylint: disable=no-member
+            retain_acked_messages: Optional[bool] = None,
+            message_retention_duration: Optional[Union[Dict, types.Duration]] = None,  # noqa E501 # pylint: disable=no-member,line-too-long
+            labels: Optional[Dict[str, str]] = None,
+            retry: Optional[Retry] = None,
+            timeout: Optional[float] = None,
+            metadata: Optional[Sequence[Tuple[str, str]]] = None,
             *args,
             **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -197,15 +282,33 @@ class PubSubSubscriptionCreateOperator(BaseOperator):
         self.fail_if_exists = fail_if_exists
         self.gcp_conn_id = gcp_conn_id
         self.delegate_to = delegate_to
+        self.push_config = push_config
+        self.retain_acked_messages = retain_acked_messages
+        self.message_retention_duration = message_retention_duration
+        self.labels = labels
+        self.retry = retry
+        self.timeout = timeout
+        self.metadata = metadata
 
     def execute(self, context):
         hook = PubSubHook(gcp_conn_id=self.gcp_conn_id,
                           delegate_to=self.delegate_to)
 
         return hook.create_subscription(
-            self.topic_project, self.topic, self.subscription,
-            self.subscription_project, self.ack_deadline_secs,
-            self.fail_if_exists)
+            topic_project=self.topic_project,
+            topic=self.topic,
+            subscription=self.subscription,
+            subscription_project=self.subscription_project,
+            ack_deadline_secs=self.ack_deadline_secs,
+            fail_if_exists=self.fail_if_exists,
+            push_config=self.push_config,
+            retain_acked_messages=self.retain_acked_messages,
+            message_retention_duration=self.message_retention_duration,
+            labels=self.labels,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata
+        )
 
 
 class PubSubTopicDeleteOperator(BaseOperator):
@@ -251,6 +354,15 @@ class PubSubTopicDeleteOperator(BaseOperator):
         For this to work, the service account making the request
         must have domain-wide delegation enabled.
     :type delegate_to: str
+    :param retry: (Optional) A retry object used to retry requests.
+        If None is specified, requests will not be retried.
+    :type retry: google.api_core.retry.Retry
+    :param timeout: (Optional) The amount of time, in seconds, to wait for the request
+        to complete. Note that if retry is specified, the timeout applies to each
+        individual attempt.
+    :type timeout: float
+    :param metadata: (Optional) Additional metadata that is provided to the method.
+    :type metadata: Sequence[Tuple[str, str]]]
     """
     template_fields = ['project', 'topic']
     ui_color = '#cb4335'
@@ -263,6 +375,9 @@ class PubSubTopicDeleteOperator(BaseOperator):
             fail_if_not_exists=False,
             gcp_conn_id: str = 'google_cloud_default',
             delegate_to: Optional[str] = None,
+            retry: Optional[Retry] = None,
+            timeout: Optional[float] = None,
+            metadata: Optional[Sequence[Tuple[str, str]]] = None,
             *args,
             **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -272,13 +387,22 @@ class PubSubTopicDeleteOperator(BaseOperator):
         self.fail_if_not_exists = fail_if_not_exists
         self.gcp_conn_id = gcp_conn_id
         self.delegate_to = delegate_to
+        self.retry = retry
+        self.timeout = timeout
+        self.metadata = metadata
 
     def execute(self, context):
         hook = PubSubHook(gcp_conn_id=self.gcp_conn_id,
                           delegate_to=self.delegate_to)
 
-        hook.delete_topic(self.project, self.topic,
-                          fail_if_not_exists=self.fail_if_not_exists)
+        hook.delete_topic(
+            project=self.project,
+            topic=self.topic,
+            fail_if_not_exists=self.fail_if_not_exists,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata
+        )
 
 
 class PubSubSubscriptionDeleteOperator(BaseOperator):
@@ -326,6 +450,15 @@ class PubSubSubscriptionDeleteOperator(BaseOperator):
         For this to work, the service account making the request
         must have domain-wide delegation enabled.
     :type delegate_to: str
+    :param retry: (Optional) A retry object used to retry requests.
+        If None is specified, requests will not be retried.
+    :type retry: google.api_core.retry.Retry
+    :param timeout: (Optional) The amount of time, in seconds, to wait for the request
+        to complete. Note that if retry is specified, the timeout applies to each
+        individual attempt.
+    :type timeout: float
+    :param metadata: (Optional) Additional metadata that is provided to the method.
+    :type metadata: Sequence[Tuple[str, str]]]
     """
     template_fields = ['project', 'subscription']
     ui_color = '#cb4335'
@@ -338,6 +471,9 @@ class PubSubSubscriptionDeleteOperator(BaseOperator):
             fail_if_not_exists=False,
             gcp_conn_id: str = 'google_cloud_default',
             delegate_to: Optional[str] = None,
+            retry: Optional[Retry] = None,
+            timeout: Optional[float] = None,
+            metadata: Optional[Sequence[Tuple[str, str]]] = None,
             *args,
             **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -347,13 +483,22 @@ class PubSubSubscriptionDeleteOperator(BaseOperator):
         self.fail_if_not_exists = fail_if_not_exists
         self.gcp_conn_id = gcp_conn_id
         self.delegate_to = delegate_to
+        self.retry = retry
+        self.timeout = timeout
+        self.metadata = metadata
 
     def execute(self, context):
         hook = PubSubHook(gcp_conn_id=self.gcp_conn_id,
                           delegate_to=self.delegate_to)
 
-        hook.delete_subscription(self.project, self.subscription,
-                                 fail_if_not_exists=self.fail_if_not_exists)
+        hook.delete_subscription(
+            project=self.project,
+            subscription=self.subscription,
+            fail_if_not_exists=self.fail_if_not_exists,
+            retry=self.retry,
+            timeout=self.timeout,
+            metadata=self.metadata
+        )
 
 
 class PubSubPublishOperator(BaseOperator):
