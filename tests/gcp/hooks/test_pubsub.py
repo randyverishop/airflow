@@ -23,6 +23,7 @@ import unittest
 from google.api_core.exceptions import AlreadyExists
 from google.cloud.exceptions import NotFound
 from googleapiclient.errors import HttpError
+from parameterized import parameterized
 
 from airflow.gcp.hooks.pubsub import PubSubException, PubSubHook
 from tests.compat import mock
@@ -340,3 +341,34 @@ class TestPubSubHook(unittest.TestCase):
                 timeout=None,
                 metadata=None
             )
+
+    @parameterized.expand([
+        (messages, ) for messages in [
+            [{"data": b'test'}],
+            [{"data": b''}],
+            [{"data": b'test', "attributes": {"weight": "100kg"}}],
+            [{"data": b'', "attributes": {"weight": "100kg"}}],
+            [{"attributes": {"weight": "100kg"}}],
+        ]
+    ])
+    def test_messages_validation_positive(self, messages):
+        PubSubHook._validate_messages(messages)
+
+    @parameterized.expand([
+        ([("wrong type", )], "Wrong message type. Must be a dictionary."),
+        ([{"wrong_key": b'test'}], "Wrong message. Dictionary must contain 'data' or 'attributes'."),
+        ([{"data": 'wrong string'}], "Wrong message. 'data' must be of type 'bytes'"),
+        ([{"data": None}], "Wrong message. 'data' must be of type 'bytes'"),
+        (
+            [{"attributes": None}],
+            "Wrong message. If 'data' is not provided 'attributes' must be a non empty dictionary."
+        ),
+        (
+            [{"attributes": "wrong string"}],
+            "Wrong message. If 'data' is not provided 'attributes' must be a non empty dictionary."
+        )
+    ])
+    def test_messages_validation_negative(self, messages, error_message):
+        with self.assertRaises(PubSubException) as e:
+            PubSubHook._validate_messages(messages)
+        self.assertEqual(str(e.exception), error_message)

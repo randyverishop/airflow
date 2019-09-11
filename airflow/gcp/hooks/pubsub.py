@@ -105,7 +105,8 @@ class PubSubHook(GoogleCloudBaseHook):
         publisher = self.get_conn()
         topic_path = PublisherClient.topic_path(project, topic)  # pylint: disable=no-member
 
-        # TODO validation of messages
+        self._validate_messages(messages)
+
         try:
             for message in messages:
                 publisher.publish(
@@ -116,6 +117,20 @@ class PubSubHook(GoogleCloudBaseHook):
         except GoogleAPICallError as e:
             raise PubSubException(
                 'Error publishing to topic {}'.format(topic_path), e)
+
+    @staticmethod
+    def _validate_messages(messages) -> None:
+        for message in messages:
+            if not isinstance(message, dict):
+                raise PubSubException("Wrong message type. Must be a dictionary.")
+            if "data" not in message and "attributes" not in message:
+                raise PubSubException("Wrong message. Dictionary must contain 'data' or 'attributes'.")
+            if "data" in message and not isinstance(message["data"], bytes):
+                raise PubSubException("Wrong message. 'data' must be of type 'bytes'")
+            if ("data" not in message and "attributes" in message and not message["attributes"]) \
+                    or ("attributes" in message and not isinstance(message["attributes"], dict)):
+                raise PubSubException(
+                    "Wrong message. If 'data' is not provided 'attributes' must be a non empty dictionary.")
 
     def create_topic(
         self,
