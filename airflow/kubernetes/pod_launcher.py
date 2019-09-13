@@ -17,6 +17,8 @@
 
 import json
 import time
+from contextlib import suppress
+
 import tenacity
 from typing import Tuple, Optional
 
@@ -105,7 +107,8 @@ class PodLauncher(LoggingMixin):
         if get_logs:
             logs = self.read_pod_logs(pod)
             for line in logs:
-                self.log.info(line.decode().rstrip())
+                with suppress(ValueError):
+                    self.log.info(line.decode().rstrip())
         result = None
         if self.extract_xcom:
             while self.base_container_is_running(pod):
