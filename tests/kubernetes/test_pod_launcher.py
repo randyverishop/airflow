@@ -51,7 +51,6 @@ class TestPodLauncher(unittest.TestCase):
                 follow=True,
                 name=mock.sentinel.metadata.name,
                 namespace=mock.sentinel.metadata.namespace,
-                tail_lines=10
             ),
             mock.call(
                 _preload_content=False,
@@ -59,7 +58,6 @@ class TestPodLauncher(unittest.TestCase):
                 follow=True,
                 name=mock.sentinel.metadata.name,
                 namespace=mock.sentinel.metadata.namespace,
-                tail_lines=10
             )
         ])
 
