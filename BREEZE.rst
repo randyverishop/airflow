@@ -21,19 +21,19 @@
 
 .. contents:: :local:
 
-Airflow Breeze
-==============
+About Airflow Breeze
+====================
 
 Airflow Breeze is an easy-to-use integration test environment managed via
-`Docker Compose <https://docs.docker.com/compose/>`_ .
-The environment is easy to use locally and it is also used by Airflow's CI Travis tests.
+`Docker Compose <https://docs.docker.com/compose/>`_.
+The environment is available for local use and is also integrated into Airflow's CI Travis tests.
 
-It's called *Airflow Breeze* as in **It's a Breeze to develop Airflow**
+We called it *Airflow Breeze* as **It's a Breeze to develop Airflow**.
 
-The advantages and disadvantages of using the environment vs. other ways of testing Airflow
-are described in `CONTRIBUTING.md <CONTRIBUTING.md#integration-test-development-environment>`_.
+The advantages and disadvantages of using the Breeze environment vs. other ways of testing Airflow
+are described in `CONTRIBUTING.rst <CONTRIBUTING.rst#integration-test-development-environment>`_.
 
-Here is the short 10 minute video about Airflow Breeze
+Here is a short 10-minute video about Airflow Breeze:
 
 .. image:: http://img.youtube.com/vi/ffKFHV6f3PQ/0.jpg
    :width: 480px
@@ -46,85 +46,79 @@ Here is the short 10 minute video about Airflow Breeze
 Prerequisites
 =============
 
-Docker
-------
+Docker Comunity Edition
+-----------------------
 
-You need latest stable Docker Community Edition installed and on the PATH. It should be
-configured to be able to run ``docker`` commands directly and not only via root user. Your user
-should be in the ``docker`` group. See `Docker installation guide <https://docs.docker.com/install/>`_
+- **Version**: Install the latest stable Docker Community Edition and add it to the PATH.
+- **Permissions**: Configure to run the ``docker`` commands directly and not only via root user. Your user should be in the ``docker`` group. See `Docker installation guide <https://docs.docker.com/install/>`_ for details.
+- **Disk space**: On macOS, increase your available disk space before starting to work with the environment. At least 128 GB of free disk space is recommended. You can also get by with a smaller space but make sure to clean up the Docker disk space periodically. See also `Docker for Mac - Space <https://docs.docker.com/docker-for-mac/space>`_ for details on increasing disk space available for Docker on Mac.
 
-When you develop on Mac OS you usually have not enough disk space for Docker if you start using it
-seriously. You should increase disk space available before starting to work with the environment.
-Usually you have weird problems of docker containers when you run out of Disk space. It might not be
-obvious that space is an issue. At least 128 GB of Disk space is recommended. You can also get by with smaller space but you should more
-often clean the docker disk space periodically.
+  Sometimes it is not obvious that space is an issue when you run into a problem with Docker. If you see a weird behaviour, try `cleaning up the images <#cleaning-up-the-images>`_.
 
-If you get into weird behaviour try `Cleaning up the images <#cleaning-up-the-images>`_.
-
-See also `Docker for Mac - Space <https://docs.docker.com/docker-for-mac/space>`_ for details of increasing
-disk space available for Docker on Mac.
-
-Docker compose
+Docker Compose
 --------------
 
-Latest stable Docker Compose installed and on the PATH. It should be
-configured to be able to run ``docker-compose`` command.
-See `Docker compose installation guide <https://docs.docker.com/compose/install/>`_
+- **Version**: Install the latest stable Docker Compose and add it to the PATH. See `Docker Compose Installation Guide <https://docs.docker.com/compose/install/>`_ for details.
+
+- **Permissions**: Configure to run the ``docker-compose`` command.
+
 
 Getopt and gstat
 ----------------
 
-* If you are on MacOS
+* For macOS, install GNU ``getopt`` and ``gstat`` utilities to get Airflow Breeze running.
 
-  * you need gnu ``getopt`` and ``gstat`` to get Airflow Breeze running.
+  Run ``brew install gnu-getopt coreutils`` and then follow instructions to link the gnu-getopt version to become the first on the PATH. Make sure to re-login after you make the suggested changes.
 
-  * Typically you need to run ``brew install gnu-getopt coreutils`` and then follow instructions (you need to link the gnu getopt
-    version to become first on the PATH). Make sure to re-login after yoy make the suggested changes.
+  If you use bash, run this command and re-login:
 
-  * Then (with brew) link the gnu-getopt to become default as suggested by brew.
+.. code-block:: bash
 
-  * If you use bash, you should run this command (and re-login):
+    echo 'export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"' >> ~/.bash_profile
+    . ~/.bash_profile
 
-  .. code-block:: bash
+..
 
-      echo 'export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"' >> ~/.bash_profile
-      . ~/.bash_profile
+  If you use zsh, run this command and re-login:
 
-  * If you use zsh, you should run this command (and re-login):
+.. code-block:: bash
 
-  .. code-block:: bash
+    echo 'export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"' >> ~/.zprofile
+    . ~/.zprofile
 
-      echo 'export PATH="/usr/local/opt/gnu-getopt/bin:$PATH"' >> ~/.zprofile
-      . ~/.zprofile
-
-* If you are on Linux
-
-   * run ``apt install util-linux coreutils`` or equivalent if your system is not Debian-based.
+* For Linux, run ``apt install util-linux coreutils`` or an equivalent if your system is not Debian-based.
 
 Memory
 ------
 
-Minimum 4GB RAM is required to run the full ``docker`` environment.
+Minimum 4GB RAM is required to run the full Breeze environment.
 
-On MacOS, the default 2GB of RAM available for your docker containers, but more memory is recommended
-(4GB should be comfortable). For details see
-`Docker for Mac - Advanced tab <https://docs.docker.com/v17.12/docker-for-mac/#advanced-tab>`_
+On macOS, 2GB of RAM are available for your Docker containers by default, but more memory is recommended
+(4GB should be comfortable). For details see `Docker for Mac - Advanced tab <https://docs.docker.com/v17.12/docker-for-mac/#advanced-tab>`_.
 
-How Breeze works
-================
+Using the Airflow Breeze Environment for Testing
+================================================
 
 Entering Breeze
 ---------------
 
-Your entry point for Airflow Breeze is `./breeze <./breeze>`_ script. You can run it with ``--help``
+You enter the Breeze integration test environment by running the ``./breeze`` script. You can run it with the ``--help``
 option to see the list of available flags. See `Airflow Breeze flags <#airflow-breeze-flags>`_ for details.
 
-You can also `Set up autocomplete <#setting-up-autocomplete>`_ for the command and add the
-checked-out airflow repository to your PATH to run breeze without the ./ and from any directory.
+  .. code-block:: bash
 
-First time you run Breeze, it will pull and build local version of docker images.
-It will pull latest Airflow CI images from `Airflow DockerHub <https://hub.docker.com/r/apache/airflow>`_
-and use them to build your local docker images.
+   ./breeze
+
+First time you run Breeze, it pulls and builds a local version of Docker images.
+It pulls the latest Airflow CI images from `Airflow DockerHub <https://hub.docker.com/r/apache/airflow>`_
+and use them to build your local Docker images. Note that the first run (per python) might take up to 10 minutes
+on a fast connection to start. Subsequent runs should be much faster.
+
+Once you enter the environment, you are dropped into bash shell of the Airflow container and you can run tests immediately.
+
+You can `set up autocomplete <#setting-up-autocomplete>`_ for commands and add the
+checked-out Airflow repository to your PATH to run Breeze without the ./ and from any directory.
+
 
 Stopping Breeze
 ---------------
@@ -132,153 +126,124 @@ Stopping Breeze
 After starting up, the environment runs in the background and takes precious memory.
 You can always stop it via:
 
-.. code-block:: bash
+  .. code-block:: bash
 
     ./breeze --stop-environment
 
 
-Using the Airflow Breeze environment for testing
-================================================
+Setting Up Autocompletion
+-------------------------
 
-Setting up autocomplete
------------------------
+The ``breeze`` command comes with a built-in bash/zsh autocomplete option for its flags. When you start typing
+the command, you can use <TAB> to show all the available switches and get autocompletion on typical values of parameters that you can use.
 
-The ``breeze`` command comes with built-in bash/zsh autocomplete for its flags. When you start typing
-the command you can use <TAB> to show all the available switches
-nd to get autocompletion on typical values of parameters that you can use.
+You can set up the autocomplete option automatically by running:
 
-You can setup auto-complete automatically by running:
-
-.. code-block:: bash
+  .. code-block:: bash
 
    ./breeze --setup-autocomplete
 
-You get autocomplete working when you re-enter the shell.
+You get the autocompletion working when you re-enter the shell.
 
 Zsh autocompletion is currently limited to only autocomplete flags. Bash autocompletion also completes
-flag values (for example python version or static check name).
+flag values (for example, Python version or static check name).
 
-Entering the environment
-------------------------
-
-You enter the integration test environment by running the ``./breeze`` script.
-
-What happens next is the appropriate docker images are pulled, local sources are used to build local version
-of the image and you are dropped into bash shell of the airflow container -
-with all necessary dependencies started up. Note that the first run (per python) might take up to 10 minutes
-on a fast connection to start. Subsequent runs should be much faster.
-
-.. code-block:: bash
-
-   ./breeze
-
-Once you enter the environment you are dropped into bash shell and you can run tests immediately.
-
-Choosing environment
+Choosing Environment
 --------------------
 
-You can choose the optional flags you need with ``breeze``
+You can choose optional flags you need with ``breeze``. For example, you can specify a Python version to use, backend and an environment for testing. With Breeze, you can recreate the same environments as we have in matrix builds in Travis CI.
 
-You can specify for example python version to use, backend to use and environment
-for testing - you can recreate the same environments as we have in matrix builds in Travis CI.
+For example, you can choose to run Python 3.6 tests with mysql as backend and in the Docker environment as follows:
 
-For example you could choose to run python 3.6 tests with mysql as backend and in docker
-environment by:
+  .. code-block:: bash
 
-.. code-block:: bash
+    ./breeze --python 3.6 --backend mysql --env docker
 
-   ./breeze --python 3.6 --backend mysql --env docker
+The choices you make are persisted in the ``./.build/`` cache directory so that next time when you use the
+``breeze`` script, it could use the values that were used previously. This way you do not have to specify them when you run the script. You can delete the ``.build/`` directory in case you want to restore the default settings.
 
-The choices you made are persisted in ``./.build/`` cache directory so that next time when you use the
-``breeze`` script, it will use the values that were used previously. This way you do not
-have to specify them when you run the script. You can delete the ``.build/`` directory in case you want to
-restore default settings.
+The defaults when you run the environment are Python 3.6, sqlite, and docker.
 
-The defaults when you run the environment are reasonable (python 3.6, sqlite, docker).
-
-Mounting local sources to Breeze
+Mounting Local Sources to Breeze
 --------------------------------
 
-Important sources of airflow are mounted inside the ``airflow-testing`` container that you enter,
-which means that you can continue editing your changes in the host in your favourite IDE and have them
-visible in docker immediately and ready to test without rebuilding images. This can be disabled by specifying
-``--skip-mounting-source-volume`` flag when running breeze, in which case you will have sources
-embedded in the container - and changes to those sources will not be persistent.
+Important sources of Airflow are mounted inside the ``airflow-testing`` container that you enter.
+This means that you can continue editing your changes on the host in your favourite IDE and have them
+visible in the Docker immediately and ready to test without rebuilding images. You can disable mounting by specifying
+``--skip-mounting-source-volume`` flag when running Breeze. In this case you will have sources
+embedded in the container and changes to these sources will not be persistent.
 
 
-After you run Breeze for the first time you will have an empty directory ``files`` in your source code
-that will be mapped to ``/files`` in your docker container. You can pass any files there you need
-to configure and run docker and they will not be removed between docker runs.
+After you run Breeze for the first time, you will have an empty directory ``files`` in your source code, which will be mapped to ``/files`` in your Docker container. You can pass there any files you need to configure and run Docker. They will not be removed between Docker runs.
 
-Running tests in Airflow Breeze
+Running Tests in Airflow Breeze
 -------------------------------
 
-Once you enter Airflow Breeze environment you should be able to simply run
-`run-tests` at will. Note that if you want to pass extra parameters to nose
-you should do it after '--'
+Once you enter Airflow Breeze environment you can simply run
+`run-tests` at will. Note that if you want to pass extra parameters to nose,
+you should do it after '--'.
 
-For example, in order to just execute the "core" unit tests, run the following:
+For example, to execute the "core" unit tests, run the following:
 
 .. code-block:: bash
 
    run-tests tests.core:TestCore -- -s --logging-level=DEBUG
 
-or a single test method:
+For a single test method, run:
 
 .. code-block:: bash
 
    run-tests tests.core:TestCore.test_check_operators -- -s --logging-level=DEBUG
 
-The tests will run ``airflow db reset`` and ``airflow db init`` the first time you
-run tests in running container, so you can count on database being initialized.
+The tests run ``airflow db reset`` and ``airflow db init`` the first time you
+launch them in a running container, so you can count on the database being initialized.
 
 All subsequent test executions within the same container will run without database
-initialisation.
+initialization.
 
-You can also optionally add --with-db-init flag if you want to re-initialize
+You can also optionally add the ``--with-db-init`` flag if you want to re-initialize
 the database.
 
 .. code-block:: bash
 
    run-tests --with-db-init tests.core:TestCore.test_check_operators -- -s --logging-level=DEBUG
 
-Adding/modifying dependencies
+Adding/Modifying Dependencies
 -----------------------------
 
-If you change apt dependencies in the ``Dockerfile`` or add python pacakges in ``setup.py` or
-javascript dependencies in ``package.json``. You can add dependencies temporarily for one Breeze
-session or permanently in ``setup.py``, ``Dockerfile``, ``package.json``.
+If you need to change apt dependencies in the ``Dockerfile``, add Python pacakges in ``setup.py`` or
+add javascript dependencies in ``package.json``, you can either add dependencies temporarily for a single Breeze
+session or permanently in ``setup.py``, ``Dockerfile``, or ``package.json`` files.
 
-Installing dependencies for one Breeze session
-..............................................
+Installing Dependencies for a Single Breeze Session
+...................................................
 
-You can install dependencies inside the container using 'sudo apt install', 'pip install' or 'npm install'
-(in airflow/www folder) respectively. This is useful if you want to test something quickly while in the
-container. However, those changes are not persistent - they will disappear once you
-exit the container (except npm dependencies in case your sources are mounted to the container). Therefore
-if you want to persist a new dependency you have to follow with the second option.
+You can install dependencies inside the container using ``sudo apt install``, ``pip install`` or ``npm install``
+(in ``airflow/www`` folder) respectively. This is useful if you want to test something quickly while you are in the
+container. However, these changes are not retained: they disappear once you
+exit the container (except for theh npm dependencies if your sources are mounted to the container). Therefore,
+if you want to retain a new dependency, follow the second option described below.
 
-Adding dependencies permanently
+Adding Dependencies Permanently
 ...............................
 
-You can add the dependencies to the Dockerfile, setup.py or package.json and rebuild the image. This
-should happen automatically if you modify any of setup.py, package.json or update Dockerfile itself.
-After you exit the container and re-run ``breeze`` the Breeze detects changes in dependencies,
-ask you to confirm rebuilding of the image and proceed to rebuilding the image if you confirm (or skip it
-if you won't confirm). After rebuilding is done, it will drop you to shell. You might also provide
-``--build-only`` flag to only rebuild images and not go into shell - it will then rebuild the image
-and will not enter the shell.
+You can add dependencies to the ``Dockerfile``, ``setup.py`` or ``package.json`` and rebuild the image. This
+should happen automatically if you modify any of these files.
+After you exit the container and re-run ``breeze``, Breeze detects changes in dependencies,
+asks you to confirm rebuilding the image and proceeds with rebuilding if you confirm (or skip it
+if you do not confirm). After rebuilding is done, Breeze drops you to shell. You may also provide the
+``--build-only`` flag to only rebuild images and not to go into shell.
 
-Optimisation for apt dependencies during development
+Changing apt Dependencies in the Dockerfile
 ....................................................
 
-During development, changing dependencies in apt-get closer to the top of the Dockerfile
-will invalidate cache for most of the image and it will take long time to rebuild the image by Breeze.
-Therefore it is a recommended practice to add new dependencies initially closer to the end
-of the Dockerfile. This way dependencies will be incrementally added.
+During development, changing dependencies in ``apt-get`` closer to the top of the ``Dockerfile``
+invalidates cache for most of the image. It takes long time for Breeze to rebuild the image.
+So, it is a recommended practice to add new dependencies initially closer to the end
+of the ``Dockerfile``. This way dependencies will be added incrementally.
 
-However before merge, those dependencies should be moved to the appropriate ``apt-get install`` command
-which is already in the Dockerfile.
+Before merge, these dependencies should be moved to the appropriate ``apt-get install`` command,
+which is already in the ``Dockerfile``.
 
 Debugging with ipdb
 -------------------
@@ -290,31 +255,31 @@ It is as easy as copy&pasting this line into your code:
 
    import ipdb; ipdb.set_trace()
 
-Once you hit the line you will be dropped into interactive ipdb  debugger where you have colors
+Once you hit the line, you will be dropped into an interactive ``ipdb`` debugger where you have colors
 and auto-completion to guide your debugging. This works from the console where you started your program.
-Note that in case of ``nosetest`` you need to provide ``--nocapture`` flag to avoid nosetests
+Note that in case of ``nosetest`` you need to provide the ``--nocapture`` flag to avoid nosetests
 capturing the stdout of your process.
 
-Airflow directory structure inside Docker
+Airflow Directory Structure inside Docker
 -----------------------------------------
 
-When you are in the container note that following directories are used:
+When you are in the container, the following directories are used:
 
 .. code-block:: text
 
-  /opt/airflow - here sources of Airflow are mounted from the host (AIRFLOW_SOURCES)
-  /root/airflow - all the "dynamic" Airflow files are created here: (AIRFLOW_HOME)
-      airflow.db - sqlite database in case sqlite is used
-      dags - folder where non-test dags are stored (test dags are in /opt/airflow/tests/dags)
-      logs - logs from airflow executions are created there
-      unittest.cfg - unit test configuration generated when entering the environment
-      webserver_config.py - webserver configuration generated when running airflow in the container
+  /opt/airflow - Contains sources of Airflow mounted from the host (AIRFLOW_SOURCES).
+  /root/airflow - Contains all the "dynamic" Airflow files (AIRFLOW_HOME), such as:
+      airflow.db - sqlite database in case sqlite is used;
+      dags - folder with non-test dags (test dags are in /opt/airflow/tests/dags);
+      logs - logs from Airflow executions;
+      unittest.cfg - unit test configuration generated when entering the environment;
+      webserver_config.py - webserver configuration generated when running Airflow in the container.
 
-Note that when run in your local environment ``/root/airflow/logs`` folder is actually mounted from your
-``logs`` directory in airflow sources, so all logs created in the container are automatically visible in the host
-as well. Every time you enter the container the logs directory is cleaned so that logs do not accumulate.
+Note that when running in your local environment, the ``/root/airflow/logs`` folder is actually mounted from your
+``logs`` directory in the Airflow sources, so all logs created in the container are automatically visible in the host
+as well. Every time you enter the container, the ``logs`` directory is cleaned so that logs do not accumulate.
 
-Port forwarding
+Port Forwarding
 ---------------
 
 When you run Airflow Breeze, the following ports are automatically forwarded:
@@ -323,24 +288,24 @@ When you run Airflow Breeze, the following ports are automatically forwarded:
 * 25433 -> forwarded to postgres database -> postgres:5432
 * 23306 -> forwarded to mysql database  -> mysql:3306
 
-You can connect to those ports/databases using:
+You can connect to these ports/databases using:
 
 * Webserver: ``http://127.0.0.1:28080``
 * Postgres: ``jdbc:postgresql://127.0.0.1:25433/airflow?user=postgres&password=airflow``
 * Mysql: ``jdbc:mysql://localhost:23306/airflow?user=root``
 
-Note that you need to start the webserver manually with ``airflow webserver`` command if you want to connect
-to the webserver (you can use ``tmux`` to multiply terminals).
+You need to start the webserver manually with the ``airflow webserver`` command if you want to connect
+to the webserver. You can use ``tmux`` to multiply terminals.
 
-For databases you need to run ``airflow db reset`` at least once (or run some tests) after you started
+For databases, you need to run ``airflow db reset`` at least once (or run some tests) after you started
 Airflow Breeze to get the database/tables created. You can connect to databases
-with IDE or any other Database client:
+with IDE or any other database client:
 
 .. image:: images/database_view.png
     :align: center
     :alt: Database view
 
-You can change host port numbers used by setting appropriate environment variables:
+You can change the used host port numbers by setting appropriate environment variables:
 
 * ``WEBSERVER_HOST_PORT``
 * ``POSTGRES_HOST_PORT``
@@ -348,46 +313,46 @@ You can change host port numbers used by setting appropriate environment variabl
 
 When you set those variables, next time when you enter the environment the new ports should be in effect.
 
-Cleaning up the images
+Cleaning Up the Images
 ----------------------
 
-You might need to cleanup your Docker environment occasionally. The images are quite big
-(1.5GB for both images needed for static code analysis and CI tests). And if you often rebuild/update
-images you might end up with some unused image data.
+You may need to clean up your Docker environment occasionally. The images are quite big
+(1.5GB for both images needed for static code analysis and CI tests). If you often rebuild/update
+images, you may end up with some unused image data.
 
-Cleanup can be performed with ``docker system prune`` command.
-Make sure to `Stop Breeze <#stopping-breeze>`_ first with ``./breeze --stop-environment``.
+Cleanup can be performed with the ``docker system prune`` command.
+Make sure to `stop Breeze <#stopping-breeze>`_ first with ``./breeze --stop-environment``.
 
-If you run into disk space errors, we recommend you prune your docker images using the
-``docker system prune --all`` command. You might need to restart the docker
-engine before running this command.
+If you run into disk space errors, we recommend you to prune your Docker images using the
+``docker system prune --all`` command. You may need to restart the Docker
+Engine before running this command.
 
-You can check if your docker is clean by running ``docker images --all`` and ``docker ps --all`` - both
+You can check if your Docker is clean by running ``docker images --all`` and ``docker ps --all`` - both
 should return an empty list of images and containers respectively.
 
-If you are on Mac OS and you end up with not enough disk space for Docker you should increase disk space
-available for Docker. See `Prerequsites <#prerequisites>`_.
+If you are on macOS and you end up with not enough disk space for Docker, increase the disk space
+available for Docker. See `Prerequsites <#prerequisites>`_ for details.
 
 Troubleshooting
 ---------------
 
-If you are having problems with the Breeze environment - try the following (after each step you
-can check if your problem is fixed)
+If you are having problems with the Breeze environment, try the steps below. After each step you
+can check whether your problem is fixed.
 
-1. Check if you have enough disks space in Docker if you are on MacOS.
-2. Stop Breeze - use ``./breeze --stop-environment``
-3. Delete ``.build`` directory and run ``./breeze --force-pull-images``
-4. `Clean up docker images <#cleaning-up-the-images>`_
-5. Restart your docker engine and try again
-6. Restart your machine and try again
-7. Remove and re-install Docker CE and try again
+1. If you are on macOS, check if you have enough disk space for Docker.
+2. Stop Breeze with ``./breeze --stop-environment``.
+3. Delete the ``.build`` directory and run ``./breeze --force-pull-images``.
+4. `Clean up Docker images <#cleaning-up-the-images>`_.
+5. Restart your Docker Engine and try again.
+6. Restart your machine and try again.
+7. Remove and re-install Docker CE and try again.
 
-In case the problems are not solved, you can set VERBOSE variable to "true" (`export VERBOSE="true"`)
-and rerun failing command, and copy & paste the output from your terminal, describe the problem and
+In case the problems are not solved, you can set the VERBOSE variable to "true" (``export VERBOSE="true"``),
+rerun the failed command, copy-and-paste the output from your terminal, describe the problem and
 post it in [Airflow Slack](https://apache-airflow-slack.herokuapp.com/) #troubleshooting channel.
 
 
-Using Breeze for other tasks
+Using Breeze for Other Tasks
 ============================
 
 Running static code checks
