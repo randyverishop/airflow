@@ -16,14 +16,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import ast
+import os
+import shutil
+
+from spython.main import Client
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
-from spython.main import Client
-import shutil
-import ast
-import os
 
 
 class SingularityOperator(BaseOperator):

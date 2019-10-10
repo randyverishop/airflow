@@ -18,18 +18,18 @@
 # under the License.
 
 import unittest
-import six
 
+import six
 from parameterized import parameterized
 from spython.instance import Instance
+
 from airflow import AirflowException
+from tests.compat import mock
 
 try:
     from airflow.contrib.operators.singularity_operator import SingularityOperator
 except ImportError:
     pass
-
-from tests.compat import mock
 
 
 class SingularityOperatorTestCase(unittest.TestCase):

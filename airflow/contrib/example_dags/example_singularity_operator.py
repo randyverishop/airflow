@@ -17,10 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
 from datetime import datetime, timedelta
+
+from airflow import DAG
 from airflow.contrib.operators.singularity_operator import SingularityOperator
+from airflow.operators.bash_operator import BashOperator
 
 default_args = {
     'owner': 'airflow',
