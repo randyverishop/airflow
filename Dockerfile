@@ -216,7 +216,7 @@ RUN echo "Downloading RAT from ${RAT_URL} to ${RAT_JAR}" \
 ARG AIRFLOW_USER=root
 ENV AIRFLOW_USER=${AIRFLOW_USER}
 
-ARG HOME=/home/airflow
+ARG HOME=/root
 ENV HOME=${HOME}
 
 ARG AIRFLOW_HOME=/root/airflow
@@ -265,7 +265,7 @@ ENV AIRFLOW_CI_EXTRAS=${AIRFLOW_CI_EXTRAS}
 
 RUN echo "Installing with extras: ${AIRFLOW_CI_EXTRAS}."
 
-ENV PATH="/root/.local/bin:/root:${PATH}"
+ENV PATH="${HOME}/.local/bin:${PATH}"
 
 # Increase the value here to force reinstalling Apache Airflow pip dependencies
 ARG PIP_DEPENDENCIES_EPOCH_NUMBER="1"
@@ -337,9 +337,9 @@ COPY ./scripts/docker/entrypoint.sh /entrypoint.sh
 COPY .bash_completion run-tests-complete run-tests /root/
 COPY .bash_completion.d/run-tests-complete /root/.bash_completion.d/run-tests-complete
 
-ENV PYTHONPATH=${PYTHONPATH}:${AIRFLOW_SOURCES}:${AIRFLOW_SOURCES}/tests/test_utils
+ENV PYTHONPATH=${PYTHONPATH}:${AIRFLOW_SOURCES}
 
-RUN "${AIRFLOW_SOURCES}/scripts/ci/docker_build/ci_build_extract_tests.sh"
+RUN "${AIRFLOW_SOURCES}/scripts/ci/docker_build/extract_tests.sh"
 
 EXPOSE 8080
 
