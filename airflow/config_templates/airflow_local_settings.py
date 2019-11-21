@@ -20,6 +20,7 @@
 
 import os
 from typing import Any, Dict
+from urllib.parse import urlparse
 
 from airflow.configuration import conf
 from airflow.utils.file import mkdirs
@@ -195,6 +196,20 @@ elif REMOTE_LOGGING and REMOTE_BASE_LOG_FOLDER.startswith('wasb'):
     }
 
     DEFAULT_LOGGING_CONFIG['handlers'].update(WASB_REMOTE_HANDLERS)
+elif REMOTE_LOGGING and REMOTE_BASE_LOG_FOLDER.startswith('stackdriver://'):
+    gcp_conn_id = conf.get('core', 'REMOTE_LOG_CONN_ID', fallback=None)
+    # stackdriver:///airflow-tasks => airflow-tasks
+    REMOTE_BASE_LOG_FOLDER = urlparse(REMOTE_BASE_LOG_FOLDER).path[1:]
+    STACKDRIVER_REMOTE_HANDLERS = {
+        'task': {
+            'class': 'airflow.utils.log.stackdriver_task_handler.StackdriverTaskHandler',
+            'formatter': 'airflow',
+            'name': REMOTE_BASE_LOG_FOLDER,
+            'gcp_conn_id': gcp_conn_id
+        }
+    }
+
+    DEFAULT_LOGGING_CONFIG['handlers'].update(STACKDRIVER_REMOTE_HANDLERS)
 elif REMOTE_LOGGING and ELASTICSEARCH_HOST:
     ELASTICSEARCH_LOG_ID_TEMPLATE = conf.get('elasticsearch', 'LOG_ID_TEMPLATE')
     ELASTICSEARCH_END_OF_LOG_MARK = conf.get('elasticsearch', 'END_OF_LOG_MARK')
