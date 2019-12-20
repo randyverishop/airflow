@@ -56,6 +56,22 @@ class TestBigQueryHookConnection(unittest.TestCase):
         )
         self.assertEqual(mock_bigquery_connection.return_value, result)
 
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=("CREDENTIALS", "PROJECT_ID",)
+    )
+    @mock.patch("airflow.gcp.hooks.base.CloudBaseHook.__init__")
+    def test_bigquery_bigquery_conn_id_deprecation_warning(
+        self, mock_base_hook_init, mock_get_creds_and_proj_id
+    ):
+        bigquery_conn_id = "bigquery conn id"
+        warning_message = "The bigquery_conn_id parameter has been deprecated. " \
+                          "You should pass the gcp_conn_id parameter."
+        with self.assertWarns(DeprecationWarning) as warn:
+            hook.BigQueryHook(bigquery_conn_id=bigquery_conn_id)
+            mock_base_hook_init.assert_called_once_with(delegate_to=None, gcp_conn_id='bigquery conn id')
+        self.assertEqual(warning_message, str(warn.warning))
+
 
 class TestPandasGbqCredentials(unittest.TestCase):
     @mock.patch(
