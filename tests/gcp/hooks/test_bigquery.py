@@ -73,6 +73,60 @@ class TestBigQueryHookConnection(unittest.TestCase):
         self.assertEqual(warning_message, str(warn.warning))
 
 
+class TestBigQueryHookInsertRows(unittest.TestCase):
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=("CREDENTIALS", "PROJECT_ID",)
+    )
+    def test_bigquery_insert_rows_not_implemented(self, mock_get_creds_and_proj_id):
+        bq_hook = hook.BigQueryHook()
+        with self.assertRaises(NotImplementedError):
+            bq_hook.insert_rows(table="table", rows=[1, 2])
+
+
+class TestBigQueryHookTableExists(unittest.TestCase):
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=("CREDENTIALS", "PROJECT_ID",)
+    )
+    @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
+    def test_bigquery_table_exists_true(self, mock_get_service, mock_get_creds_and_proj_id):
+        project_id = 'bq-project'
+        dataset_id = 'bq_dataset'
+        table_id = 'bq_table_view'
+
+        method = mock_get_service.return_value.tables.return_value.get
+
+        bq_hook = hook.BigQueryHook()
+        result = bq_hook.table_exists(project_id=project_id, dataset_id=dataset_id, table_id=table_id)
+
+        method.assert_called_once_with(datasetId=dataset_id, projectId=project_id, tableId=table_id)
+        self.assertTrue(result)
+
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=("CREDENTIALS", "PROJECT_ID",)
+    )
+    @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
+    def test_bigquery_table_exists_false(self, mock_get_service, mock_get_creds_and_proj_id):
+        project_id = 'bq-project'
+        dataset_id = 'bq_dataset'
+        table_id = 'bq_table_view'
+
+        resp_getitem = mock.MagicMock()
+        resp_getitem.return_value = '404'
+        resp = type('', (object,), {"status": 404, "__getitem__": resp_getitem})()
+        method = mock_get_service.return_value.tables.return_value.get
+        method.return_value.execute.side_effect = HttpError(
+            resp=resp, content=b'Address not found')
+
+        bq_hook = hook.BigQueryHook()
+        result = bq_hook.table_exists(project_id=project_id, dataset_id=dataset_id, table_id=table_id)
+
+        resp_getitem.assert_called_once_with('status')
+        self.assertFalse(result)
+
+
 class TestPandasGbqCredentials(unittest.TestCase):
     @mock.patch(
         'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
