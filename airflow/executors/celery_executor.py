@@ -38,6 +38,7 @@ from celery.backends.base import BaseKeyValueStoreBackend
 from celery.backends.database import DatabaseBackend, Task as TaskDb, session_cleanup
 from celery.result import AsyncResult
 
+from airflow.bin.cli import CLIFactory
 from airflow.config_templates.default_celery import DEFAULT_CELERY_CONFIG
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException
@@ -78,7 +79,6 @@ def execute_command(command_to_exec: CommandType) -> None:
     """Executes command."""
     BaseExecutor.validate_command(command_to_exec)
     log.info("Executing command in Celery: %s", command_to_exec)
-    env = os.environ.copy()
     try:
         # pylint: disable=unexpected-keyword-arg
         subprocess.check_output(command_to_exec, stderr=subprocess.STDOUT,
