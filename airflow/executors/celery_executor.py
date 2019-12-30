@@ -80,8 +80,6 @@ def exec_airflow_command(command_to_exec: List[str]):
     :param command_to_exec: list of program arguments. The first element should contain the "airflow" element.
     :type command_to_exec List[str]
     """
-    parser = get_parser()
-
     if not command_to_exec:
         raise AirflowException("You should specify the program argument using `command_to_exec` parameter.")
 
