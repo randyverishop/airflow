@@ -82,6 +82,7 @@ def exec_airflow_command(command_to_exec: List[str], proctitle_prefix: Optional[
     :type command_to_exec List[str]
     """
     parser = get_parser()
+
     if command_to_exec[0] != "airflow":
         raise AirflowException('The first element must be equal to "airflow".')
 
