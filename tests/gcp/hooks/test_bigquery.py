@@ -869,7 +869,7 @@ class TestBigQueryBaseCursor(unittest.TestCase):
         return_value=(CREDENTIALS, PROJECT_ID)
     )
     @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
-    def test_pull_job_complete_pass(
+    def test_poll_job_complete_pass(
         self, location, exception, expected_result, mock_get_service, mock_get_creds_and_proj_id
     ):
         method_jobs = mock_get_service.return_value.jobs
@@ -889,14 +889,22 @@ class TestBigQueryBaseCursor(unittest.TestCase):
         assert method_get.call_count == 1
         assert method_execute.call_count == 1
 
-    # @mock.patch(
-    #     'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
-    #     return_value=(CREDENTIALS, PROJECT_ID)
-    # )
-    # @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
-    # def test_pull_job_complete_on_fails(
-    #     self, location, exception, expected_result, mock_get_service, mock_get_creds_and_proj_id
-    # ):
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=(CREDENTIALS, PROJECT_ID)
+    )
+    @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
+    def test_pull_job_complete_on_fails(self, mock_get_service, mock_get_creds_and_proj_id):
+        method_jobs = mock_get_service.return_value.jobs
+        method_get = method_jobs.return_value.get
+        method_execute = method_get.return_value.execute
+        resp = type('', (object,), {"status": 404, "reason": "Not Found"})()
+        method_execute.side_effect = HttpError(resp=resp, content=b'Not Found')
+
+        bq_hook = hook.BigQueryHook()
+        cursor = bq_hook.get_cursor()
+        with self.assertRaisesRegex(AirflowException, "HttpError 404 \"Not Found\""):
+            cursor.poll_job_complete(JOB_ID)
 
 
 class TestTableDataOperations(unittest.TestCase):

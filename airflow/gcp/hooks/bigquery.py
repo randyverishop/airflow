@@ -1345,6 +1345,7 @@ class BigQueryBaseCursor(LoggingMixin):
             time.sleep(5)
         return keep_polling_job
 
+    @CloudBaseHook.catch_http_exception
     def poll_job_complete(self, job_id: str) -> bool:
         """
         Check if jobs completed.
@@ -1370,9 +1371,7 @@ class BigQueryBaseCursor(LoggingMixin):
                     '%s: Retryable error while polling job with id %s',
                     err.resp.status, job_id)
             else:
-                raise Exception(
-                    'BigQuery job status check failed. Final error was: {}'.
-                    format(err.resp.status))
+                raise err
         return False
 
     def cancel_query(self) -> None:
