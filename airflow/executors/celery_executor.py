@@ -35,6 +35,7 @@ from celery import Celery, Task, states as celery_states
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.backends.database import DatabaseBackend, Task as TaskDb, session_cleanup
 from celery.result import AsyncResult
+from setproctitle import setproctitle
 
 from airflow.cli.cli_parser import get_parser
 from airflow.config_templates.default_celery import DEFAULT_CELERY_CONFIG
@@ -71,7 +72,7 @@ app = Celery(
     config_source=celery_configuration)
 
 
-def exec_airflow_command(command_to_exec: List[str]):
+def exec_airflow_command(command_to_exec: List[str], proctitle_prefix: Optional[str] = None):
     """
     Execute command using CLI.
 
@@ -80,15 +81,20 @@ def exec_airflow_command(command_to_exec: List[str]):
     :param command_to_exec: list of program arguments. The first element should contain the "airflow" element.
     :type command_to_exec List[str]
     """
-    if not command_to_exec:
-        raise AirflowException("You should specify the program argument using `command_to_exec` parameter.")
-
+    parser = get_parser()
     if command_to_exec[0] != "airflow":
         raise AirflowException('The first element must be equal to "airflow".')
 
     # drop "airflow"
     command_to_exec = command_to_exec[1:]
     args = parser.parse_args(command_to_exec)
+
+    if proctitle_prefix:
+        proc_title = "{proctitle_prefix}: {args.dag_id} {args.task_id} {args.execution_date}"
+        if hasattr(args, "job_id"):
+            proc_title += " {args.job_id}"
+        setproctitle(proc_title.format(args=args, proctitle_prefix=proctitle_prefix))
+
     args.func(args)
 
 
