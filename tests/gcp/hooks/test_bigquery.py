@@ -850,6 +850,54 @@ class TestBigQueryBaseCursor(unittest.TestCase):
 
         self.assertEqual(table_list, result)
 
+    @parameterized.expand([
+        ("US", None, True),
+        (None, None, True),
+        (
+            None,
+            HttpError(resp=type('', (object,), {"status": 500, })(), content=b'Internal Server Error'),
+            False
+        ),
+        (
+            None,
+            HttpError(resp=type('', (object,), {"status": 503, })(), content=b'Service Unavailable'),
+            False
+        ),
+    ])
+    @mock.patch(
+        'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+        return_value=(CREDENTIALS, PROJECT_ID)
+    )
+    @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
+    def test_pull_job_complete_pass(
+        self, location, exception, expected_result, mock_get_service, mock_get_creds_and_proj_id
+    ):
+        method_jobs = mock_get_service.return_value.jobs
+        method_get = method_jobs.return_value.get
+        method_execute = method_get.return_value.execute
+        method_execute.return_value = {"status": {"state": "DONE"}}
+        method_execute.side_effect = exception
+
+        hook_params = {"location": location} if location else {}
+        bq_hook = hook.BigQueryHook(**hook_params)
+        cursor = bq_hook.get_cursor()
+
+        result = cursor.poll_job_complete(JOB_ID)
+        self.assertEqual(expected_result, result)
+        method_get.assert_called_once_with(projectId=PROJECT_ID, jobId=JOB_ID, **hook_params)
+        assert method_jobs.call_count == 1
+        assert method_get.call_count == 1
+        assert method_execute.call_count == 1
+
+    # @mock.patch(
+    #     'airflow.gcp.hooks.base.CloudBaseHook._get_credentials_and_project_id',
+    #     return_value=(CREDENTIALS, PROJECT_ID)
+    # )
+    # @mock.patch("airflow.gcp.hooks.bigquery.BigQueryHook.get_service")
+    # def test_pull_job_complete_on_fails(
+    #     self, location, exception, expected_result, mock_get_service, mock_get_creds_and_proj_id
+    # ):
+
 
 class TestTableDataOperations(unittest.TestCase):
     @mock.patch(
