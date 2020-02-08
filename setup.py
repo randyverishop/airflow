@@ -18,12 +18,15 @@
 """Setup.py for the Airflow project."""
 
 import io
+import itertools
 import logging
 import os
 import subprocess
 import sys
 import unittest
 from importlib import util
+from os.path import dirname
+from shutil import rmtree
 from typing import List
 
 from setuptools import Command, find_packages, setup
@@ -591,5 +594,144 @@ def do_setup():
     )
 
 
+PROVIDERS_DEPENDENCIES = {
+    "amazon": [aws],
+    "apache.cassandra": [cassandra],
+    "apache.druid": [druid],
+    "apache.hdfs": [hdfs],
+    "apache.hive": [hive],
+    "apache.pig": [],
+    "apache.pinot": [pinot],
+    "apache.spark": [],
+    "apache.sqoop": [],
+    "celery": [celery],
+    "cloudant": [cloudant],
+    "cncf.kubernetes": [kubernetes],
+    "databricks": [databricks],
+    "datadog": [datadog],
+    "dingding": [],
+    "discord": [],
+    "docker": [docker],
+    "email": [],
+    "ftp": [],
+    "google.cloud": [gcp],
+    "google.marketing_platform": [gcp],
+    "google.suite": [gcp],
+    "grpc": [grpc],
+    "http": [],
+    "imap": [],
+    "jdbc": [jdbc],
+    "jenkins": [jenkins],
+    "jira": [jira],
+    "microsoft.azure": [azure],
+    "microsoft.mssql": [mssql],
+    "microsoft.winrm": [winrm],
+    "mongo": [mongo],
+    "mysql": [mysql],
+    "odbc": [odbc],
+    "openfass": [],
+    "opsgenie": [],
+    "oracle": [oracle],
+    "pagerduty": [pagerduty],
+    "papermill": [papermill],
+    "postgres": [postgres],
+    "presto": [presto],
+    "qubole": [qds],
+    "redis": [redis],
+    "salesforce": [salesforce],
+    "samba": [samba],
+    "segment": [segment],
+    "sftp": [ssh],
+    "slack": [slack],
+    "snowflake": [snowflake],
+    "sqlite": [],
+    "ssh": [ssh],
+    "vertica": [vertica],
+    "zendesk": [zendesk],
+}
+
+
+def do_setup_package_providers(provider_module: str, deps: List[str]):
+    """Set up package providers"""
+    provider_package_name = provider_module.replace(".", "_")
+    package_name = f'apache-airflow-providers-{provider_package_name}' if provider_module != "providers" \
+        else f'apache-airflow-providers'
+
+    package_prefix = f'airflow.providers.{provider_module}' if provider_module != 'providers' \
+        else 'airflow.providers'
+    found_packages = find_packages()
+    found_packages = [package for package in found_packages if package.startswith(package_prefix)]
+    print(found_packages)
+    setup(
+        name=package_name,
+        description=f'Back-porting ${package_name} package for Airflow 1.10.*',
+        long_description=f"""
+Back-ported {package_name} to 1.10.* series of Airflow.
+""",
+        long_description_content_type='text/markdown',
+        license='Apache License 2.0',
+        version='0.0.1',
+        packages=found_packages,
+        include_package_data=True,
+        zip_safe=False,
+        install_requires=[
+            'apache-airflow~=1.10',
+        ] + deps,
+        classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Environment :: Console',
+            'Intended Audience :: Developers',
+            'Intended Audience :: System Administrators',
+            'License :: OSI Approved :: Apache Software License',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+            'Topic :: System :: Monitoring',
+        ],
+        python_requires='>=3.6',
+    )
+
+
+def find_package_dependencies(package):
+    """Finds dependencies for the packages"""
+    if package != 'providers':
+        return PROVIDERS_DEPENDENCIES.get(package)
+    else:
+        return list(itertools.chain(PROVIDERS_DEPENDENCIES.values()))
+
+
+def get_provider_packages():
+    """Returns all packages available in providers"""
+    packages = list(PROVIDERS_DEPENDENCIES)
+    return ['providers'] + packages
+
+
 if __name__ == "__main__":
-    do_setup()
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print()
+        print("You can also build any of the backport packages by "
+              "adding --provider-package PACKAGE as first two")
+        print("Of the setup.py arguments")
+        print(f"Available packages: {get_provider_packages()}")
+        print()
+        print("You can see all packages configured by adding --list-backport-packages flag")
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--provider-package":
+        if len(sys.argv) == 2:
+            raise Exception(f"Use one of {get_provider_packages()} as parameter ")
+        provider_package = sys.argv[2]
+        if provider_package not in get_provider_packages():
+            raise Exception(f"The package {provider_package} is not a backport package. "
+                            f"Use one of {get_provider_packages()}")
+        try:
+            rmtree(os.path.join(dirname(__file__), "build"))
+        except FileNotFoundError:
+            pass
+        del sys.argv[1:3]
+        print(f"Building backport package: {provider_package}")
+        dependencies = find_package_dependencies(package=provider_package)
+        do_setup_package_providers(provider_module=provider_package, deps=dependencies)
+    elif len(sys.argv) > 1 and sys.argv[1] == "--list-backport-packages":
+        for key in PROVIDERS_DEPENDENCIES:
+            print(key)
+    else:
+        do_setup()
