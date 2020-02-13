@@ -113,7 +113,7 @@ unit of work and continuity.
 
 Currently stable versions of Apache Airflow are released in 1.10.* series. We are working on the
 future, incompatible version of Airflow from the 2.0.* series. It is going to be released in
-in 2020. However the exact time of release depends on many factors and is yet uknown.
+in 2020. However the exact time of release depends on many factors and is yet unknown.
 We have already a lot of changes in the hooks/operators/sensors for many external systems
 and they are not used because they are part of the master/2.0 release.
 
@@ -128,11 +128,12 @@ have to upgrade their Airflow version to use those packages. There are a number 
 between Airflow 2.0 and 1.10.* - documented in [UPDATING.md](UPDATING.md). With backported
 providers package users can migrate their DAGs to the new providers package incrementally
 and once they convert to the new operators/sensors/hooks they can seamlessly migrate their
-environments to Airlfow 2.0.
+environments to Airflow 2.0.
 
-More information about the status and releases of the backported packages are available
+More information about the status and releases of the back-ported packages are available
 at https://cwiki.apache.org/confluence/display/AIRFLOW/Backported+providers+packages+for+Airflow+1.10.*+series
 
+You
 
 ## Contributing
 
