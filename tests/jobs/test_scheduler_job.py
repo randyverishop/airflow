@@ -43,7 +43,7 @@ import airflow.example_dags
 from airflow import AirflowException, models, settings
 from airflow.configuration import conf
 from airflow.executors import BaseExecutor
-from airflow.jobs import BackfillJob, SchedulerJob
+from airflow.jobs import BackfillJob, SchedulerJob, DagFileProcessor
 from airflow.models import DAG, DagBag, DagModel, DagRun, Pool, SlaMiss, \
     TaskInstance as TI, errors
 from airflow.operators.bash_operator import BashOperator
@@ -109,6 +109,959 @@ class SchedulerJobTest(unittest.TestCase):
             session.merge(orm_dag)
             session.commit()
         return dag
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dagbag = DagBag()
+        cls.old_val = None
+        if conf.has_option('core', 'load_examples'):
+            cls.old_val = conf.get('core', 'load_examples')
+        conf.set('core', 'load_examples', 'false')
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.old_val is not None:
+            conf.set('core', 'load_examples', cls.old_val)
+        else:
+            conf.remove_option('core', 'load_examples')
+
+    def test_dag_file_processor_sla_miss_callback(self):
+        """
+        Test that the dag file processor calls the sla miss callback
+        """
+        session = settings.Session()
+
+        sla_callback = MagicMock()
+
+        # Create dag with a start of 1 day ago, but an sla of 0
+        # so we'll already have an sla_miss on the books.
+        test_start_date = days_ago(1)
+        dag = DAG(dag_id='test_sla_miss',
+                  sla_miss_callback=sla_callback,
+                  default_args={'start_date': test_start_date,
+                                'sla': datetime.timedelta()})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow')
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='success'))
+
+        session.merge(SlaMiss(task_id='dummy',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag_file_processor.manage_slas(dag=dag, session=session)
+
+        assert sla_callback.called
+
+    def test_dag_file_processor_sla_miss_callback_invalid_sla(self):
+        """
+        Test that the dag file processor does not call the sla miss callback when
+        given an invalid sla
+        """
+        session = settings.Session()
+
+        sla_callback = MagicMock()
+
+        # Create dag with a start of 1 day ago, but an sla of 0
+        # so we'll already have an sla_miss on the books.
+        # Pass anything besides a timedelta object to the sla argument.
+        test_start_date = days_ago(1)
+        dag = DAG(dag_id='test_sla_miss',
+                  sla_miss_callback=sla_callback,
+                  default_args={'start_date': test_start_date,
+                                'sla': None})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow')
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='success'))
+
+        session.merge(SlaMiss(task_id='dummy',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag_file_processor.manage_slas(dag=dag, session=session)
+        sla_callback.assert_not_called()
+
+    def test_scheduler_executor_overflow(self):
+        """
+        Test that tasks that are set back to scheduled and removed from the executor
+        queue in the case of an overflow.
+        """
+        executor = MockExecutor(do_update=True, parallelism=3)
+
+        with create_session() as session:
+            dagbag = DagBag(executor=executor, dag_folder=os.path.join(settings.DAGS_FOLDER,
+                                                                       "no_dags.py"))
+            dag = self.create_test_dag()
+            dagbag.bag_dag(dag=dag, root_dag=dag, parent_dag=dag)
+            dag = self.create_test_dag()
+            task = DummyOperator(
+                task_id='dummy',
+                dag=dag,
+                owner='airflow')
+            tis = []
+            for i in range(1, 10):
+                ti = TI(task, DEFAULT_DATE + timedelta(days=i))
+                ti.state = State.SCHEDULED
+                tis.append(ti)
+                session.merge(ti)
+
+            # scheduler._process_dags(simple_dag_bag)
+            @mock.patch('airflow.models.DagBag', return_value=dagbag)
+            @mock.patch('airflow.models.DagBag.collect_dags')
+            @mock.patch('airflow.jobs.scheduler_job.SchedulerJob._change_state_for_tis_without_dagrun')
+            def do_schedule(mock_dagbag, mock_collect_dags, mock_change_state):
+                # Use a empty file since the above mock will return the
+                # expected DAGs. Also specify only a single file so that it doesn't
+                # try to schedule the above DAG repeatedly.
+                scheduler = SchedulerJob(num_runs=1,
+                                         executor=executor,
+                                         subdir=os.path.join(settings.DAGS_FOLDER,
+                                                             "no_dags.py"))
+                scheduler.heartrate = 0
+                scheduler.run()
+
+            do_schedule()  # pylint: disable=no-value-for-parameter
+            for ti in tis:
+                ti.refresh_from_db()
+            self.assertEqual(len(executor.queued_tasks), 0)
+
+            successful_tasks = [ti for ti in tis if ti.state == State.SUCCESS]
+            scheduled_tasks = [ti for ti in tis if ti.state == State.SCHEDULED]
+            self.assertEqual(3, len(successful_tasks))
+            self.assertEqual(6, len(scheduled_tasks))
+
+    def test_dag_file_processor_sla_miss_callback_sent_notification(self):
+        """
+        Test that the dag file processor does not call the sla_miss_callback when a
+        notification has already been sent
+        """
+        session = settings.Session()
+
+        # Mock the callback function so we can verify that it was not called
+        sla_callback = MagicMock()
+
+        # Create dag with a start of 2 days ago, but an sla of 1 day
+        # ago so we'll already have an sla_miss on the books
+        test_start_date = days_ago(2)
+        dag = DAG(dag_id='test_sla_miss',
+                  sla_miss_callback=sla_callback,
+                  default_args={'start_date': test_start_date,
+                                'sla': datetime.timedelta(days=1)})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow')
+
+        # Create a TaskInstance for two days ago
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='success'))
+
+        # Create an SlaMiss where notification was sent, but email was not
+        session.merge(SlaMiss(task_id='dummy',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date,
+                              email_sent=False,
+                              notification_sent=True))
+
+        # Now call manage_slas and see if the sla_miss callback gets called
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag_file_processor.manage_slas(dag=dag, session=session)
+
+        sla_callback.assert_not_called()
+
+    def test_dag_file_processor_sla_miss_callback_exception(self):
+        """
+        Test that the dag file processor gracefully logs an exception if there is a problem
+        calling the sla_miss_callback
+        """
+        session = settings.Session()
+
+        sla_callback = MagicMock(side_effect=RuntimeError('Could not call function'))
+
+        test_start_date = days_ago(2)
+        dag = DAG(dag_id='test_sla_miss',
+                  sla_miss_callback=sla_callback,
+                  default_args={'start_date': test_start_date})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow',
+                             sla=datetime.timedelta(hours=1))
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='Success'))
+
+        # Create an SlaMiss where notification was sent, but email was not
+        session.merge(SlaMiss(task_id='dummy',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+
+        # Now call manage_slas and see if the sla_miss callback gets called
+        mock_log = mock.MagicMock()
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock_log)
+        dag_file_processor.manage_slas(dag=dag, session=session)
+        assert sla_callback.called
+        mock_log.exception.assert_called_once_with(
+            'Could not call sla_miss_callback for DAG %s',
+            'test_sla_miss')
+
+    @mock.patch('airflow.jobs.scheduler_job.send_email')
+    def test_dag_file_processor_only_collect_emails_from_sla_missed_tasks(self, mock_send_email):
+        session = settings.Session()
+
+        test_start_date = days_ago(2)
+        dag = DAG(dag_id='test_sla_miss',
+                  default_args={'start_date': test_start_date,
+                                'sla': datetime.timedelta(days=1)})
+
+        email1 = 'test1@test.com'
+        task = DummyOperator(task_id='sla_missed',
+                             dag=dag,
+                             owner='airflow',
+                             email=email1,
+                             sla=datetime.timedelta(hours=1))
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='Success'))
+
+        email2 = 'test2@test.com'
+        DummyOperator(task_id='sla_not_missed',
+                      dag=dag,
+                      owner='airflow',
+                      email=email2)
+
+        session.merge(SlaMiss(task_id='sla_missed',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+
+        dag_file_processor.manage_slas(dag=dag, session=session)
+
+        self.assertTrue(len(mock_send_email.call_args_list), 1)
+
+        send_email_to = mock_send_email.call_args_list[0][0][0]
+        self.assertIn(email1, send_email_to)
+        self.assertNotIn(email2, send_email_to)
+
+    @mock.patch("airflow.utils.email.send_email")
+    def test_dag_file_processor_sla_miss_email_exception(self, mock_send_email):
+        """
+        Test that the dag file processor gracefully logs an exception if there is a problem
+        sending an email
+        """
+        session = settings.Session()
+
+        # Mock the callback function so we can verify that it was not called
+        mock_send_email.side_effect = RuntimeError('Could not send an email')
+
+        test_start_date = days_ago(2)
+        dag = DAG(dag_id='test_sla_miss',
+                  default_args={'start_date': test_start_date,
+                                'sla': datetime.timedelta(days=1)})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow',
+                             email='test@test.com',
+                             sla=datetime.timedelta(hours=1))
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='Success'))
+
+        # Create an SlaMiss where notification was sent, but email was not
+        session.merge(SlaMiss(task_id='dummy',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+
+        mock_log = mock.MagicMock()
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock_log)
+
+        dag_file_processor.manage_slas(dag=dag, session=session)
+        mock_log.exception.assert_called_once_with(
+            'Could not send SLA Miss email notification for DAG %s',
+            'test_sla_miss')
+
+    def test_dag_file_processor_sla_miss_deleted_task(self):
+        """
+        Test that the dag file processor will not crash when trying to send
+        sla miss notification for a deleted task
+        """
+        session = settings.Session()
+
+        test_start_date = days_ago(2)
+        dag = DAG(dag_id='test_sla_miss',
+                  default_args={'start_date': test_start_date,
+                                'sla': datetime.timedelta(days=1)})
+
+        task = DummyOperator(task_id='dummy',
+                             dag=dag,
+                             owner='airflow',
+                             email='test@test.com',
+                             sla=datetime.timedelta(hours=1))
+
+        session.merge(models.TaskInstance(task=task,
+                                          execution_date=test_start_date,
+                                          state='Success'))
+
+        # Create an SlaMiss where notification was sent, but email was not
+        session.merge(SlaMiss(task_id='dummy_deleted',
+                              dag_id='test_sla_miss',
+                              execution_date=test_start_date))
+
+        mock_log = mock.MagicMock()
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock_log)
+        dag_file_processor.manage_slas(dag=dag, session=session)
+
+    def test_dag_file_processor_dagrun_once(self):
+        """
+        Test if the dag file proccessor does not create multiple dagruns
+        if a dag is scheduled with @once and a start_date
+        """
+        dag = DAG(
+            'test_scheduler_dagrun_once',
+            start_date=timezone.datetime(2015, 1, 1),
+            schedule_interval="@once")
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNone(dr)
+
+    @parameterized.expand([
+        [State.NONE, None, None],
+        [State.UP_FOR_RETRY, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+        [State.UP_FOR_RESCHEDULE, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+    ])
+    def test_dag_file_processor_process_task_instances(self, state, start_date, end_date):
+        """
+        Test if _process_task_instances puts the right task instances into the
+        mock_list.
+        """
+        dag = DAG(
+            dag_id='test_scheduler_process_execute_task',
+            start_date=DEFAULT_DATE)
+        dag_task1 = DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        with create_session() as session:
+            orm_dag = DagModel(dag_id=dag.dag_id)
+            session.merge(orm_dag)
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        with create_session() as session:
+            tis = dr.get_task_instances(session=session)
+            for ti in tis:
+                ti.state = state
+                ti.start_date = start_date
+                ti.end_date = end_date
+
+        mock_list = Mock()
+        dag_file_processor._process_task_instances(dag, task_instances_list=mock_list)
+
+        mock_list.append.assert_called_once_with(
+            (dag.dag_id, dag_task1.task_id, DEFAULT_DATE, TRY_NUMBER)
+        )
+
+    @parameterized.expand([
+        [State.NONE, None, None],
+        [State.UP_FOR_RETRY, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+        [State.UP_FOR_RESCHEDULE, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+    ])
+    def test_dag_file_processor_process_task_instances_with_task_concurrency(
+        self, state, start_date, end_date,
+    ):
+        """
+        Test if _process_task_instances puts the right task instances into the
+        mock_list.
+        """
+        dag = DAG(
+            dag_id='test_scheduler_process_execute_task_with_task_concurrency',
+            start_date=DEFAULT_DATE)
+        dag_task1 = DummyOperator(
+            task_id='dummy',
+            task_concurrency=2,
+            dag=dag,
+            owner='airflow')
+
+        with create_session() as session:
+            orm_dag = DagModel(dag_id=dag.dag_id)
+            session.merge(orm_dag)
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        with create_session() as session:
+            tis = dr.get_task_instances(session=session)
+            for ti in tis:
+                ti.state = state
+                ti.start_date = start_date
+                ti.end_date = end_date
+
+        ti_to_schedule = []
+        dag_file_processor._process_task_instances(dag, task_instances_list=ti_to_schedule)
+
+        assert ti_to_schedule == [
+            (dag.dag_id, dag_task1.task_id, DEFAULT_DATE, TRY_NUMBER),
+        ]
+
+    @parameterized.expand([
+        [State.NONE, None, None],
+        [State.UP_FOR_RETRY, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+        [State.UP_FOR_RESCHEDULE, timezone.utcnow() - datetime.timedelta(minutes=30),
+         timezone.utcnow() - datetime.timedelta(minutes=15)],
+    ])
+    def test_dag_file_processor_process_task_instances_depends_on_past(self, state, start_date, end_date):
+        """
+        Test if _process_task_instances puts the right task instances into the
+        mock_list.
+        """
+        dag = DAG(
+            dag_id='test_scheduler_process_execute_task_depends_on_past',
+            start_date=DEFAULT_DATE,
+            default_args={
+                'depends_on_past': True,
+            },
+        )
+        dag_task1 = DummyOperator(
+            task_id='dummy1',
+            dag=dag,
+            owner='airflow')
+        dag_task2 = DummyOperator(
+            task_id='dummy2',
+            dag=dag,
+            owner='airflow')
+
+        with create_session() as session:
+            orm_dag = DagModel(dag_id=dag.dag_id)
+            session.merge(orm_dag)
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        with create_session() as session:
+            tis = dr.get_task_instances(session=session)
+            for ti in tis:
+                ti.state = state
+                ti.start_date = start_date
+                ti.end_date = end_date
+
+        ti_to_schedule = []
+        dag_file_processor._process_task_instances(dag, task_instances_list=ti_to_schedule)
+
+        assert ti_to_schedule == [
+            (dag.dag_id, dag_task1.task_id, DEFAULT_DATE, TRY_NUMBER),
+            (dag.dag_id, dag_task2.task_id, DEFAULT_DATE, TRY_NUMBER),
+        ]
+
+    def test_dag_file_processor_do_not_schedule_removed_task(self):
+        dag = DAG(
+            dag_id='test_scheduler_do_not_schedule_removed_task',
+            start_date=DEFAULT_DATE)
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        dag = DAG(
+            dag_id='test_scheduler_do_not_schedule_removed_task',
+            start_date=DEFAULT_DATE)
+
+        mock_list = Mock()
+        dag_file_processor._process_task_instances(dag, task_instances_list=mock_list)
+
+        mock_list.put.assert_not_called()
+
+    def test_dag_file_processor_do_not_schedule_too_early(self):
+        dag = DAG(
+            dag_id='test_scheduler_do_not_schedule_too_early',
+            start_date=timezone.datetime(2200, 1, 1))
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNone(dr)
+
+        mock_list = Mock()
+        dag_file_processor._process_task_instances(dag, task_instances_list=mock_list)
+
+        mock_list.put.assert_not_called()
+
+    def test_dag_file_processor_do_not_schedule_without_tasks(self):
+        dag = DAG(
+            dag_id='test_scheduler_do_not_schedule_without_tasks',
+            start_date=DEFAULT_DATE)
+
+        with create_session() as session:
+            orm_dag = DagModel(dag_id=dag.dag_id)
+            session.merge(orm_dag)
+            dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+            dag.clear(session=session)
+            dag.start_date = None
+            dr = dag_file_processor.create_dag_run(dag, session=session)
+            self.assertIsNone(dr)
+
+    def test_dag_file_processor_do_not_run_finished(self):
+        dag = DAG(
+            dag_id='test_scheduler_do_not_run_finished',
+            start_date=DEFAULT_DATE)
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        tis = dr.get_task_instances(session=session)
+        for ti in tis:
+            ti.state = State.SUCCESS
+
+        session.commit()
+        session.close()
+
+        mock_list = Mock()
+        dag_file_processor._process_task_instances(dag, task_instances_list=mock_list)
+
+        mock_list.put.assert_not_called()
+
+    def test_dag_file_processor_add_new_task(self):
+        """
+        Test if a task instance will be added if the dag is updated
+        """
+        dag = DAG(
+            dag_id='test_scheduler_add_new_task',
+            start_date=DEFAULT_DATE)
+
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 1)
+
+        DummyOperator(
+            task_id='dummy2',
+            dag=dag,
+            owner='airflow')
+
+        task_instances_list = Mock()
+        dag_file_processor._process_task_instances(dag, task_instances_list=task_instances_list)
+
+        tis = dr.get_task_instances()
+        self.assertEqual(len(tis), 2)
+
+    def test_dag_file_processor_verify_max_active_runs(self):
+        """
+        Test if a a dagrun will not be scheduled if max_dag_runs has been reached
+        """
+        dag = DAG(
+            dag_id='test_scheduler_verify_max_active_runs',
+            start_date=DEFAULT_DATE)
+        dag.max_active_runs = 1
+
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNone(dr)
+
+    def test_dag_file_processor_fail_dagrun_timeout(self):
+        """
+        Test if a a dagrun wil be set failed if timeout
+        """
+        dag = DAG(
+            dag_id='test_scheduler_fail_dagrun_timeout',
+            start_date=DEFAULT_DATE)
+        dag.dagrun_timeout = datetime.timedelta(seconds=60)
+
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+        dr.start_date = timezone.utcnow() - datetime.timedelta(days=1)
+        session.merge(dr)
+        session.commit()
+
+        dr2 = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr2)
+
+        dr.refresh_from_db(session=session)
+        self.assertEqual(dr.state, State.FAILED)
+
+    def test_dag_file_processor_verify_max_active_runs_and_dagrun_timeout(self):
+        """
+        Test if a a dagrun will not be scheduled if max_dag_runs
+        has been reached and dagrun_timeout is not reached
+
+        Test if a a dagrun will be scheduled if max_dag_runs has
+        been reached but dagrun_timeout is also reached
+        """
+        dag = DAG(
+            dag_id='test_scheduler_verify_max_active_runs_and_dagrun_timeout',
+            start_date=DEFAULT_DATE)
+        dag.max_active_runs = 1
+        dag.dagrun_timeout = datetime.timedelta(seconds=60)
+
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+
+        # Should not be scheduled as DagRun has not timedout and max_active_runs is reached
+        new_dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNone(new_dr)
+
+        # Should be scheduled as dagrun_timeout has passed
+        dr.start_date = timezone.utcnow() - datetime.timedelta(days=1)
+        session.merge(dr)
+        session.commit()
+        new_dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(new_dr)
+
+    def test_dag_file_processor_max_active_runs_respected_after_clear(self):
+        """
+        Test if _process_task_instances only schedules ti's up to max_active_runs
+        (related to issue AIRFLOW-137)
+        """
+        dag = DAG(
+            dag_id='test_scheduler_max_active_runs_respected_after_clear',
+            start_date=DEFAULT_DATE)
+        dag.max_active_runs = 3
+
+        dag_task1 = DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+        session.close()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dag.clear()
+
+        # First create up to 3 dagruns in RUNNING state.
+        assert dag_file_processor.create_dag_run(dag) is not None
+        assert dag_file_processor.create_dag_run(dag) is not None
+        assert dag_file_processor.create_dag_run(dag) is not None
+        assert len(DagRun.find(dag_id=dag.dag_id, state=State.RUNNING, session=session)) == 3
+
+        # Reduce max_active_runs to 1
+        dag.max_active_runs = 1
+
+        task_instances_list = Mock()
+        # and schedule them in, so we can check how many
+        # tasks are put on the task_instances_list (should be one, not 3)
+        dag_file_processor._process_task_instances(dag, task_instances_list=task_instances_list)
+
+        task_instances_list.append.assert_called_once_with(
+            (dag.dag_id, dag_task1.task_id, DEFAULT_DATE, TRY_NUMBER)
+        )
+
+    def test_find_dags_to_run_includes_subdags(self):
+        dag = self.dagbag.get_dag('test_subdag_operator')
+        print(self.dagbag.dag_ids)
+        print(self.dagbag.dag_folder)
+        self.assertGreater(len(dag.subdags), 0)
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dags = dag_file_processor._find_dags_to_process(self.dagbag.dags.values(), paused_dag_ids=())
+
+        self.assertIn(dag, dags)
+        for subdag in dag.subdags:
+            self.assertIn(subdag, dags)
+
+    def test_find_dags_to_run_skip_paused_dags(self):
+        dagbag = DagBag(include_examples=False)
+
+        dag = dagbag.get_dag('test_subdag_operator')
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+        dags = dag_file_processor._find_dags_to_process(dagbag.dags.values(), paused_dag_ids=[dag.dag_id])
+
+        self.assertNotIn(dag, dags)
+
+    def test_dag_catchup_option(self):
+        """
+        Test to check that a DAG with catchup = False only schedules beginning now, not back to the start date
+        """
+
+        def setup_dag(dag_id, schedule_interval, start_date, catchup):
+            default_args = {
+                'owner': 'airflow',
+                'depends_on_past': False,
+                'start_date': start_date
+            }
+            dag = DAG(dag_id,
+                      schedule_interval=schedule_interval,
+                      max_active_runs=1,
+                      catchup=catchup,
+                      default_args=default_args)
+
+            op1 = DummyOperator(task_id='t1', dag=dag)
+            op2 = DummyOperator(task_id='t2', dag=dag)
+            op2.set_upstream(op1)
+            op3 = DummyOperator(task_id='t3', dag=dag)
+            op3.set_upstream(op2)
+
+            session = settings.Session()
+            orm_dag = DagModel(dag_id=dag.dag_id)
+            session.merge(orm_dag)
+            session.commit()
+            session.close()
+
+            return dag
+
+        now = timezone.utcnow()
+        six_hours_ago_to_the_hour = (now - datetime.timedelta(hours=6)).replace(
+            minute=0, second=0, microsecond=0)
+        half_an_hour_ago = now - datetime.timedelta(minutes=30)
+        two_hours_ago = now - datetime.timedelta(hours=2)
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+
+        dag1 = setup_dag(dag_id='dag_with_catchup',
+                         schedule_interval='* * * * *',
+                         start_date=six_hours_ago_to_the_hour,
+                         catchup=True)
+        default_catchup = conf.getboolean('scheduler', 'catchup_by_default')
+        self.assertEqual(default_catchup, True)
+        self.assertEqual(dag1.catchup, True)
+
+        dag2 = setup_dag(dag_id='dag_without_catchup_ten_minute',
+                         schedule_interval='*/10 * * * *',
+                         start_date=six_hours_ago_to_the_hour,
+                         catchup=False)
+        dr = dag_file_processor.create_dag_run(dag2)
+        # We had better get a dag run
+        self.assertIsNotNone(dr)
+        # The DR should be scheduled in the last half an hour, not 6 hours ago
+        self.assertGreater(dr.execution_date, half_an_hour_ago)
+        # The DR should be scheduled BEFORE now
+        self.assertLess(dr.execution_date, timezone.utcnow())
+
+        dag3 = setup_dag(dag_id='dag_without_catchup_hourly',
+                         schedule_interval='@hourly',
+                         start_date=six_hours_ago_to_the_hour,
+                         catchup=False)
+        dr = dag_file_processor.create_dag_run(dag3)
+        # We had better get a dag run
+        self.assertIsNotNone(dr)
+        # The DR should be scheduled in the last 2 hours, not 6 hours ago
+        self.assertGreater(dr.execution_date, two_hours_ago)
+        # The DR should be scheduled BEFORE now
+        self.assertLess(dr.execution_date, timezone.utcnow())
+
+        dag4 = setup_dag(dag_id='dag_without_catchup_once',
+                         schedule_interval='@once',
+                         start_date=six_hours_ago_to_the_hour,
+                         catchup=False)
+        dr = dag_file_processor.create_dag_run(dag4)
+        self.assertIsNotNone(dr)
+
+    def test_dag_file_processor_auto_align(self):
+        """
+        Test if the schedule_interval will be auto aligned with the start_date
+        such that if the start_date coincides with the schedule the first
+        execution_date will be start_date, otherwise it will be start_date +
+        interval.
+        """
+        dag = DAG(
+            dag_id='test_scheduler_auto_align_1',
+            start_date=timezone.datetime(2016, 1, 1, 10, 10, 0),
+            schedule_interval="4 5 * * *"
+        )
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+
+        dag_file_processor = DagFileProcessor(dag_ids=[], log=mock.MagicMock())
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+        self.assertEqual(dr.execution_date, timezone.datetime(2016, 1, 2, 5, 4))
+
+        dag = DAG(
+            dag_id='test_scheduler_auto_align_2',
+            start_date=timezone.datetime(2016, 1, 1, 10, 10, 0),
+            schedule_interval="10 10 * * *"
+        )
+        DummyOperator(
+            task_id='dummy',
+            dag=dag,
+            owner='airflow')
+
+        session = settings.Session()
+        orm_dag = DagModel(dag_id=dag.dag_id)
+        session.merge(orm_dag)
+        session.commit()
+
+        dag.clear()
+
+        dr = dag_file_processor.create_dag_run(dag)
+        self.assertIsNotNone(dr)
+        self.assertEqual(dr.execution_date, timezone.datetime(2016, 1, 1, 10, 10))
+
+    def test_process_dags_not_create_dagrun_for_subdags(self):
+        dag = self.dagbag.get_dag('test_subdag_operator')
+
+        scheduler = DagFileProcessor(dag_ids=[dag.dag_id], log=mock.MagicMock())
+        scheduler._process_task_instances = mock.MagicMock()
+        scheduler.manage_slas = mock.MagicMock()
+
+        scheduler._process_dags(self.dagbag, [dag] + dag.subdags, [])
+
+        with create_session() as session:
+            sub_dagruns = (
+                session
+                .query(DagRun)
+                .filter(DagRun.dag_id == dag.subdags[0].dag_id)
+                .count()
+            )
+
+            self.assertEqual(0, sub_dagruns)
+
+            parent_dagruns = (
+                session
+                .query(DagRun)
+                .filter(DagRun.dag_id == dag.dag_id)
+                .count()
+            )
+
+            self.assertGreater(parent_dagruns, 0)
+
+
+class TestSchedulerJob(unittest.TestCase):
+
+    def setUp(self):
+        clear_db_runs()
+        clear_db_pools()
+        clear_db_dags()
+        clear_db_sla_miss()
+        clear_db_errors()
+
+        # Speed up some tests by not running the tasks, just look at what we
+        # enqueue!
+        self.null_exec = MockExecutor()
 
     @classmethod
     def setUpClass(cls):
