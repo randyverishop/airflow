@@ -1599,13 +1599,13 @@ PROTOCOLS = [
 ALL = HOOK + OPERATOR + SENSOR + PROTOCOLS
 
 RENAMED_HOOKS = [
-    (old_class, new_class)
-    for old_class, new_class in HOOK + OPERATOR + SENSOR
+    (new_class, old_class)
+    for new_class, old_class in HOOK + OPERATOR + SENSOR
     if old_class.rpartition(".")[2] != new_class.rpartition(".")[2]
 ]
 
 
-class TestMovingCoreToContrib(TestCase):
+class TestMovingContribToCore(TestCase):
     @staticmethod
     def assert_warning(msg: str, warning: Any):
         error = "Text '{}' not in warnings".format(msg)
