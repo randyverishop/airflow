@@ -27,6 +27,8 @@ declare -a EXTRA_DC_OPTIONS
 declare -a INTEGRATIONS
 # This is where remaining args are passed
 declare -a REMAINING_ARGS
+# This is where static check options are defined
+declare -a EXTRA_STATIC_CHECK_OPTIONS
 
 function setup_default_breeze_variables() {
     # Whether to actually run docker compose with the command set given
