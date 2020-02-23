@@ -65,7 +65,7 @@ class SimpleDag(BaseDag):
         self._dag_id: str = dag.dag_id
         self._task_ids: List[str] = [task.task_id for task in dag.tasks]
         self._full_filepath: str = dag.full_filepath
-        self._is_paused: bool = dag.is_paused
+        self._is_paused: bool = False
         self._concurrency: int = dag.concurrency
         self._pickle_id: Optional[str] = pickle_id
         self._task_special_args: Dict[str, Any] = {}

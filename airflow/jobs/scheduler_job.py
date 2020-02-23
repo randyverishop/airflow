@@ -725,14 +725,14 @@ class DagFileProcessor(LoggingMixin):
         dag_runs_by_dag_id = {k: list(v) for k, v in groupby(dag_runs, lambda d: d.dag_id)}
 
         for dag in dags:
-            dag = dagbag.get_dag(dag.dag_id)
-            if not dag:
-                self.log.error("DAG ID %s was not found in the DagBag", dag.dag_id)
-                continue
-
-            if dag.is_paused:
-                self.log.info("Not processing DAG %s since it's paused", dag.dag_id)
-                continue
+            # dag = dagbag.get_dag(dag.dag_id)
+            # if not dag:
+            #     self.log.error("DAG ID %s was not found in the DagBag", dag.dag_id)
+            #     continue
+            #
+            # if dag.is_paused:
+            #     self.log.info("Not processing DAG %s since it's paused", dag.dag_id)
+            #     continue
 
             dag_id = dag.dag_id
             self.log.info("Processing %s", dag_id)
@@ -855,13 +855,19 @@ class DagFileProcessor(LoggingMixin):
         # Save individual DAGs in the ORM and update DagModel.last_scheduled_time
         dagbag.sync_to_db()
 
-        paused_dag_ids = {dag.dag_id for dag in dagbag.dags.values() if dag.is_paused}
+        from airflow.models import DagModel
+        paused_dag_ids = (
+            session.query(DagModel.dag_id)
+                .filter(DagModel.is_paused.is_(True))
+                .filter(DagModel.dag_id.in_(dagbag.dag_ids))
+                .all()
+        )
 
         # Pickle the DAGs (if necessary) and put them into a SimpleDag
-        for dag_id in dagbag.dags:
+        for dag_id, dag in dagbag.dags.items():
             # Only return DAGs that are not paused
             if dag_id not in paused_dag_ids:
-                dag = dagbag.get_dag(dag_id)
+                # dag = dagbag.get_dag(dag_id)
                 pickle_id = None
                 if pickle_dags:
                     pickle_id = dag.pickle(session).id
