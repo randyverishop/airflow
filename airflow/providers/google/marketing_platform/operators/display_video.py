@@ -336,3 +336,31 @@ class GoogleDisplayVideo360RunReportOperator(BaseOperator):
             self.params,
         )
         hook.run_query(query_id=self.report_id, params=self.params)
+
+
+class GoogleDisplayVideo360DownloadOperator(BaseOperator):
+    """ Retrieves entities in SDF format """
+
+    template_fields = ("api_version", )
+
+    @apply_defaults
+    def __init__(
+        self,
+        api_version: str = "v1",
+        gcp_conn_id: str = "google_cloud_default",
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.api_version = api_version
+        self.gcp_conn_id = gcp_conn_id
+
+    def execute(self, context):
+        hook = GoogleDisplayVideo360Hook(
+            gcp_conn_id=self.gcp_conn_id,
+            api_version=self.api_version,
+        )
+
+        self.log.info("Downloading entities...")
+        hook.download()

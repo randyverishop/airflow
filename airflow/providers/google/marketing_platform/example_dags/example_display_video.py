@@ -22,7 +22,8 @@ Example Airflow DAG that shows how to use DisplayVideo.
 from airflow import models
 from airflow.providers.google.marketing_platform.operators.display_video import (
     GoogleDisplayVideo360CreateReportOperator, GoogleDisplayVideo360DeleteReportOperator,
-    GoogleDisplayVideo360DownloadReportOperator, GoogleDisplayVideo360RunReportOperator,
+    GoogleDisplayVideo360DownloadOperator, GoogleDisplayVideo360DownloadReportOperator,
+    GoogleDisplayVideo360RunReportOperator,
 )
 from airflow.providers.google.marketing_platform.sensors.display_video import (
     GoogleDisplayVideo360ReportSensor,
@@ -92,5 +93,9 @@ with models.DAG(
         report_id=report_id, task_id="delete_report"
     )
     # [END howto_google_display_video_deletequery_report_operator]
+
+    # [START howto_google_display_video_download_operator]
+    download = GoogleDisplayVideo360DownloadOperator(task_id="download_entities")
+    # [END howto_google_display_video_download_operator]]
 
     create_report >> run_report >> wait_for_report >> get_report >> delete_report

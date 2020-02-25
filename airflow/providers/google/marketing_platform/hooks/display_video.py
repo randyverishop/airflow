@@ -127,3 +127,18 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
             .runquery(queryId=query_id, body=params)
             .execute(num_retries=self.num_retries)
         )
+
+    def download(self):
+        """Retrieves entities in SDF format.
+
+        # :param
+        # :type
+        """
+
+        response = (
+            self.get_conn()  # pylint: disable=no-member
+            .sdf()
+            .download()
+            .execute(num_retries=self.num_retries)
+        )
+        return response.get()
