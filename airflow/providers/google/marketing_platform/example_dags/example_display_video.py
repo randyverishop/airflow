@@ -29,8 +29,9 @@ from airflow.providers.google.marketing_platform.sensors.display_video import (
     GoogleDisplayVideo360ReportSensor,
 )
 from airflow.utils import dates
-
 # [START howto_display_video_env_variables]
+from tests.test_utils.gcp_system_helpers import provide_gcp_context
+
 BUCKET = "gs://test-display-video-bucket"
 REPORT = {
     "kind": "doubleclickbidmanager#query",
@@ -98,4 +99,10 @@ with models.DAG(
     download = GoogleDisplayVideo360DownloadOperator(task_id="download_entities")
     # [END howto_google_display_video_download_operator]]
 
-    create_report >> run_report >> wait_for_report >> get_report >> delete_report
+    # create_report >> run_report >> wait_for_report >> get_report >> delete_report
+
+
+if __name__ == '__main__':
+    scope = ["https://www.googleapis.com/auth/doubleclickbidmanager"]
+    with provide_gcp_context("gmp.json", scopes=scope):
+        dag.run()
