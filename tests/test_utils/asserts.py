@@ -46,10 +46,22 @@ class CountQueries:
         self.result = CountQueriesResult()
 
     def __enter__(self):
+        print(
+            "__enter__:airflow.settings.engine=",
+            airflow.settings.engine,
+            " ID:",
+            id(airflow.settings.engine)
+        )
         event.listen(airflow.settings.engine, "after_cursor_execute", self.after_cursor_execute)
         return self.result
 
     def __exit__(self, type_, value, traceback):
+        print(
+            "__enter__:airflow.settings.engine=",
+            airflow.settings.engine,
+            " ID:",
+            id(airflow.settings.engine)
+        )
         event.remove(airflow.settings.engine, "after_cursor_execute", self.after_cursor_execute)
 
     def after_cursor_execute(self, *args, **kwargs):

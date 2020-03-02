@@ -18,7 +18,7 @@
 import contextlib
 from functools import wraps
 
-from airflow import settings
+import airflow.settings
 
 
 @contextlib.contextmanager
@@ -26,7 +26,7 @@ def create_session():
     """
     Contextmanager that will create and teardown a session.
     """
-    session = settings.Session()
+    session = airflow.settings.Session()
     try:
         yield session
         session.commit()
