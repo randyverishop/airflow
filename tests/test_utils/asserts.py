@@ -22,6 +22,7 @@ from sqlalchemy import event
 
 # Long import to not create a copy of the reference, but to refer to one place.
 import airflow.settings
+from airflow.utils.session import create_session
 
 
 def assert_equal_ignore_multiple_spaces(case, first, second, msg=None):
@@ -42,8 +43,9 @@ class CountQueries:
     Does not support multiple processes. When a new process is started in context, its queries will
     not be included.
     """
-    def __init__(self):
+    def __init__(self, engine):
         self.result = CountQueriesResult()
+        self.engine = engine
 
     def __enter__(self):
         print(
@@ -52,7 +54,7 @@ class CountQueries:
             " ID:",
             id(airflow.settings.engine)
         )
-        event.listen(airflow.settings.engine, "after_cursor_execute", self.after_cursor_execute)
+        event.listen(self.engine, "after_cursor_execute", self.after_cursor_execute)
         return self.result
 
     def __exit__(self, type_, value, traceback):
@@ -62,7 +64,7 @@ class CountQueries:
             " ID:",
             id(airflow.settings.engine)
         )
-        event.remove(airflow.settings.engine, "after_cursor_execute", self.after_cursor_execute)
+        event.remove(self.engine, "after_cursor_execute", self.after_cursor_execute)
 
     def after_cursor_execute(self, *args, **kwargs):
         self.result.count += 1
@@ -73,7 +75,7 @@ count_queries = CountQueries  # pylint: disable=invalid-name
 
 @contextmanager
 def assert_queries_count(expected_count, message_fmt=None):
-    with count_queries() as result:
+    with create_session() as session, count_queries(session.bind) as result:
         yield None
     message_fmt = message_fmt or "The expected number of db queries is {expected_count}. " \
                                  "The current number is {current_count}."
