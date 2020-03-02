@@ -339,20 +339,55 @@ class GoogleDisplayVideo360RunReportOperator(BaseOperator):
 
 
 class GoogleDisplayVideo360DownloadOperator(BaseOperator):
-    """ Retrieves entities in SDF format """
+    """
+    Retrieves entities in SDF format
 
-    template_fields = ("api_version", )
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:GoogleDisplayVideo360DownloadOperator`
+
+    .. seealso::
+        Check also the official API docs:
+        `https://developers.google.com/bid-manager/v1.1/sdf/download`
+
+    :param file_types: File types that will be returned.
+        If INVENTORY_SOURCE is requested, no other file types may be requested.
+        Usage: https://developers.google.com/bid-manager/v1.1/sdf/download
+    :type file_types: list
+    :param filter_type: Filter type used to filter entities to fetch.
+        PARTNER_ID and INVENTORY_SOURCE_ID may only be used when downloading inventory sources.
+        Usage: https://developers.google.com/bid-manager/v1.1/sdf/download
+    :type filter_type: str
+    :param filter_ids: The IDs of the specified filter type.
+        This is used to filter entities to fetch. At least one ID must be specified.
+        Only one ID is allowed for the ADVERTISER_ID filter type.
+        For INSERTION_ORDER_ID or LINE_ITEM_ID filter types all IDs must be from the same Advertiser.
+    :type filter_ids: list
+    :param version: SDF Version (column names, types, order)
+        in which the entities will be returned. qDefault to 3.1.
+    :type version: str
+    """
+
+    template_fields = ("api_version", "file_types", "filter_type", "filter_ids", "version")
 
     @apply_defaults
     def __init__(
         self,
+        file_types: list,
+        filter_type: str,
+        filter_ids: list,
+        version: str,
         api_version: str = "v1",
         gcp_conn_id: str = "google_cloud_default",
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
+        self.file_types = file_types
+        self.filter_type = filter_type
+        self.filter_ids = filter_ids
+        self.version = version
         self.api_version = api_version
         self.gcp_conn_id = gcp_conn_id
 
@@ -363,4 +398,8 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
         )
 
         self.log.info("Downloading entities...")
-        hook.download()
+        hook.download(file_types=self.file_types,
+                      filter_type=self.filter_type,
+                      filter_ids=self.filter_ids,
+                      version=self.version
+                      )
