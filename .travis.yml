@@ -29,30 +29,30 @@ env:
     - CI="true"
 python: "3.6"
 stages:
-  - pre-test
+#  - pre-test
   - test
 services:
   - docker
 jobs:
   include:
-    - name: "Static checks"
-      stage: pre-test
-      script: ./scripts/ci/ci_run_all_static_checks.sh
-      env: >-
-        PYTHON_VERSION=3.6
-        AIRFLOW_MOUNT_SOURCE_DIR_FOR_STATIC_CHECKS="true"
-        SKIP=pylint-tests
-    - name: "Static checks - pylint tests only"
-      stage: pre-test
-      script: ./scripts/ci/ci_run_static_checks_pylint_tests.sh
-      env: >-
-        PYTHON_VERSION=3.6
-        AIRFLOW_MOUNT_SOURCE_DIR_FOR_STATIC_CHECKS="true"
-    - name: "Build documentation"
-      env: >-
-        PYTHON_VERSION=3.6
-      stage: test
-      script: ./scripts/ci/ci_docs.sh
+#    - name: "Static checks"
+#      stage: pre-test
+#      script: ./scripts/ci/ci_run_all_static_checks.sh
+#      env: >-
+#        PYTHON_VERSION=3.6
+#        AIRFLOW_MOUNT_SOURCE_DIR_FOR_STATIC_CHECKS="true"
+#        SKIP=pylint-tests
+#    - name: "Static checks - pylint tests only"
+#      stage: pre-test
+#      script: ./scripts/ci/ci_run_static_checks_pylint_tests.sh
+#      env: >-
+#        PYTHON_VERSION=3.6
+#        AIRFLOW_MOUNT_SOURCE_DIR_FOR_STATIC_CHECKS="true"
+#    - name: "Build documentation"
+#      env: >-
+#        PYTHON_VERSION=3.6
+#      stage: test
+#      script: ./scripts/ci/ci_docs.sh
     - name: "Tests [Postgres][3.6][Kubernetes][persistent]"
       env: >-
         BACKEND=postgres
@@ -115,5 +115,7 @@ jobs:
       stage: test
       script: ./scripts/ci/ci_prepare_backport_packages.sh
 before_install:
+  - ifconfig
+  - curl ifconfig.me
   - ./scripts/ci/ci_before_install.sh
 script: ./scripts/ci/ci_run_airflow_testing.sh

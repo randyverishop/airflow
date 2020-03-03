@@ -222,7 +222,7 @@ set -u
 
 if [[ "${TRAVIS}" == "true" ]]; then
     CI_ARGS=(
-        "--verbosity=0"
+        "--verbosity=1"
         "--strict-markers"
         "--instafail"
         "--durations=100"
@@ -232,6 +232,7 @@ if [[ "${TRAVIS}" == "true" ]]; then
         "--maxfail=50"
         "--pythonwarnings=ignore::DeprecationWarning"
         "--pythonwarnings=ignore::PendingDeprecationWarning"
+        "tests/jobs/"
         )
 else
     CI_ARGS=()
@@ -255,7 +256,7 @@ if [[ -n ${RUNTIME} ]]; then
         "${MY_DIR}/deploy_airflow_to_kubernetes.sh"
     fi
 fi
-
+pip install pydevd-pycharm~=193.6015.39
 
 ARGS=("${CI_ARGS[@]}" "${TESTS_TO_RUN}")
 

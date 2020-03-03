@@ -19,10 +19,7 @@ import re
 from contextlib import contextmanager
 
 from sqlalchemy import event
-
-# Long import to not create a copy of the reference, but to refer to one place.
-import airflow.settings
-from airflow.utils.session import create_session
+import sqlalchemy.engine.base
 
 
 def assert_equal_ignore_multiple_spaces(case, first, second, msg=None):
@@ -43,31 +40,20 @@ class CountQueries:
     Does not support multiple processes. When a new process is started in context, its queries will
     not be included.
     """
-    def __init__(self, engine):
+    def __init__(self):
         self.result = CountQueriesResult()
-        self.engine = engine
 
     def __enter__(self):
-        print(
-            "__enter__:airflow.settings.engine=",
-            airflow.settings.engine,
-            " ID:",
-            id(airflow.settings.engine)
-        )
-        event.listen(self.engine, "after_cursor_execute", self.after_cursor_execute)
+        self.original_execute_context = sqlalchemy.engine.base.Connection._execute_context
+        sqlalchemy.engine.base.Connection._execute_context = lambda *args, **kwargs: self.my_hook(*args, **kwargs)
         return self.result
 
     def __exit__(self, type_, value, traceback):
-        print(
-            "__enter__:airflow.settings.engine=",
-            airflow.settings.engine,
-            " ID:",
-            id(airflow.settings.engine)
-        )
-        event.remove(self.engine, "after_cursor_execute", self.after_cursor_execute)
+        sqlalchemy.engine.base.Connection._execute_context = self.original_execute_context
 
-    def after_cursor_execute(self, *args, **kwargs):
+    def my_hook(self, *args, **kwargs):
         self.result.count += 1
+        return self.original_execute_context(*args, *kwargs)
 
 
 count_queries = CountQueries  # pylint: disable=invalid-name
@@ -75,7 +61,7 @@ count_queries = CountQueries  # pylint: disable=invalid-name
 
 @contextmanager
 def assert_queries_count(expected_count, message_fmt=None):
-    with create_session() as session, count_queries(session.bind) as result:
+    with count_queries() as result:
         yield None
     message_fmt = message_fmt or "The expected number of db queries is {expected_count}. " \
                                  "The current number is {current_count}."
