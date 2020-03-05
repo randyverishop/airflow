@@ -128,7 +128,11 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
             .execute(num_retries=self.num_retries)
         )
 
-    def download(self, file_types: list, filter_type: str, filter_ids: list, version: str) -> dict:
+    def download(self,
+                 file_types: list,
+                 filter_type: str,
+                 filter_ids: list,
+                 version: Optional[str] = None) -> dict:
         """
         Retrieves entities in SDF format.
 
@@ -148,13 +152,19 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
         :type version: str
         """
 
+        body = {
+            "fileTypes": file_types,
+            "filterIds": filter_ids,
+            "filterType": filter_type
+        }
+
+        if version:
+            body['version'] = version
+
         response = (
             self.get_conn()  # pylint: disable=no-member
             .sdf()
-            .download(fileTypes=file_types,
-                      filterType=filter_type,
-                      filterIds=filter_ids,
-                      version=version)
+            .download(body=body)
             .execute(num_retries=self.num_retries)
         )
-        return response.get()
+        return response
