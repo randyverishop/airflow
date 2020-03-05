@@ -342,7 +342,6 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
     """
     Retrieves entities in SDF format
 
-
     .. seealso::
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:GoogleDisplayVideo360DownloadOperator`
@@ -377,8 +376,8 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
         file_types: list,
         filter_type: str,
         filter_ids: list,
-        version: str,
-        api_version: str = "v1",
+        version=None,
+        api_version: str = "v1.1",
         gcp_conn_id: str = "google_cloud_default",
         *args,
         **kwargs,
@@ -398,8 +397,9 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
         )
 
         self.log.info("Downloading entities...")
-        hook.download(file_types=self.file_types,
-                      filter_type=self.filter_type,
-                      filter_ids=self.filter_ids,
-                      version=self.version
-                      )
+        hook.download(
+            file_types=self.file_types,
+            filter_type=self.filter_type,
+            filter_ids=self.filter_ids,
+            version=self.version
+        )
