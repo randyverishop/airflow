@@ -54,10 +54,10 @@ REPORT = {
 PARAMS = {"dataRange": "LAST_14_DAYS", "timezoneCode": "America/New_York"}
 # [END howto_display_video_env_variables]
 
-FILE_TYPES: list = []
-FILTER_TYPE: str = "test"
-FILTER_IDS: list = []
-VERSION: str = "1"
+FILE_TYPES: list = ["AD"]
+FILTER_IDS: list = [6440317]
+FILTER_TYPE: str = "ADVERTISER_ID"
+VERSION = None
 
 default_args = {"start_date": dates.days_ago(1)}
 
@@ -103,17 +103,18 @@ with models.DAG(
     # [START howto_google_display_video_download_operator]
     download = GoogleDisplayVideo360DownloadOperator(
         task_id="download_entities",
-        file_types=[],
-        filter_type="FILTER_TYPE",
-        filter_ids=[],
-        version="VERSION"
+        file_types=FILE_TYPES,
+        filter_ids=FILTER_IDS,
+        filter_type=FILTER_TYPE,
+        version=VERSION
     )
     # [END howto_google_display_video_download_operator]]
 
-    create_report >> run_report >> wait_for_report >> get_report >> delete_report
+    # create_report >> run_report >> wait_for_report >> get_report >> delete_report
 
 
 if __name__ == '__main__':
     scope = ["https://www.googleapis.com/auth/doubleclickbidmanager"]
     with provide_gcp_context("gmp.json", scopes=scope):
+        dag.clear(reset_dag_runs=True)
         dag.run()
