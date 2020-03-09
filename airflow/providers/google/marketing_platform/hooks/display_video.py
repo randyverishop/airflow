@@ -143,12 +143,12 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
             PARTNER_ID and INVENTORY_SOURCE_ID may only be used when downloading inventory sources.
         :type filter_type: str
         :param filter_ids: The IDs of the specified filter type.
-        This is used to filter entities to fetch. At least one ID must be specified.
-        Only one ID is allowed for the ADVERTISER_ID filter type.
-        For INSERTION_ORDER_ID or LINE_ITEM_ID filter types all IDs must be from the same Advertiser.
+            This is used to filter entities to fetch. At least one ID must be specified.
+            Only one ID is allowed for the ADVERTISER_ID filter type.
+            For INSERTION_ORDER_ID or LINE_ITEM_ID filter types all IDs must be from the same Advertiser.
         :type filter_ids: list
         :param version: SDF Version (column names, types, order)
-            in which the entities will be returned. qDefault to 3.1.
+            in which the entities will be returned. Default to 3.1.
         :type version: str
         """
 
@@ -160,6 +160,8 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
 
         if version:
             body['version'] = version
+
+        self.log.info("D")
 
         response = (
             self.get_conn()  # pylint: disable=no-member

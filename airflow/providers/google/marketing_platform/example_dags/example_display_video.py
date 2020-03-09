@@ -59,6 +59,12 @@ FILTER_IDS: list = [6440317]
 FILTER_TYPE: str = "ADVERTISER_ID"
 VERSION = None
 
+body = {
+        "fileTypes": FILE_TYPES,
+        "filterIds": FILTER_IDS,
+        "filterType": FILTER_TYPE
+        }
+
 default_args = {"start_date": dates.days_ago(1)}
 
 with models.DAG(
@@ -66,39 +72,39 @@ with models.DAG(
     default_args=default_args,
     schedule_interval=None,  # Override to match your needs
 ) as dag:
-    # [START howto_google_display_video_createquery_report_operator]
-    create_report = GoogleDisplayVideo360CreateReportOperator(
-        body=REPORT, task_id="create_report"
-    )
-    report_id = "{{ task_instance.xcom_pull('create_report', key='report_id') }}"
-    # [END howto_google_display_video_createquery_report_operator]
-
-    # [START howto_google_display_video_runquery_report_operator]
-    run_report = GoogleDisplayVideo360RunReportOperator(
-        report_id=report_id, params=PARAMS, task_id="run_report"
-    )
-    # [END howto_google_display_video_runquery_report_operator]
-
-    # [START howto_google_display_video_wait_report_operator]
-    wait_for_report = GoogleDisplayVideo360ReportSensor(
-        task_id="wait_for_report", report_id=report_id
-    )
-    # [END howto_google_display_video_wait_report_operator]
-
-    # [START howto_google_display_video_getquery_report_operator]
-    get_report = GoogleDisplayVideo360DownloadReportOperator(
-        report_id=report_id,
-        task_id="get_report",
-        bucket_name=BUCKET,
-        report_name="test1.csv",
-    )
-    # [END howto_google_display_video_getquery_report_operator]
-
-    # [START howto_google_display_video_deletequery_report_operator]
-    delete_report = GoogleDisplayVideo360DeleteReportOperator(
-        report_id=report_id, task_id="delete_report"
-    )
-    # [END howto_google_display_video_deletequery_report_operator]
+    # # [START howto_google_display_video_createquery_report_operator]
+    # create_report = GoogleDisplayVideo360CreateReportOperator(
+    #     body=REPORT, task_id="create_report"
+    # )
+    # report_id = "{{ task_instance.xcom_pull('create_report', key='report_id') }}"
+    # # [END howto_google_display_video_createquery_report_operator]
+    #
+    # # [START howto_google_display_video_runquery_report_operator]
+    # run_report = GoogleDisplayVideo360RunReportOperator(
+    #     report_id=report_id, params=PARAMS, task_id="run_report"
+    # )
+    # # [END howto_google_display_video_runquery_report_operator]
+    #
+    # # [START howto_google_display_video_wait_report_operator]
+    # wait_for_report = GoogleDisplayVideo360ReportSensor(
+    #     task_id="wait_for_report", report_id=report_id
+    # )
+    # # [END howto_google_display_video_wait_report_operator]
+    #
+    # # [START howto_google_display_video_getquery_report_operator]
+    # get_report = GoogleDisplayVideo360DownloadReportOperator(
+    #     report_id=report_id,
+    #     task_id="get_report",
+    #     bucket_name=BUCKET,
+    #     report_name="test1.csv",
+    # )
+    # # [END howto_google_display_video_getquery_report_operator]
+    #
+    # # [START howto_google_display_video_deletequery_report_operator]
+    # delete_report = GoogleDisplayVideo360DeleteReportOperator(
+    #     report_id=report_id, task_id="delete_report"
+    # )
+    # # [END howto_google_display_video_deletequery_report_operator]
 
     # [START howto_google_display_video_download_operator]
     download = GoogleDisplayVideo360DownloadOperator(
@@ -106,7 +112,6 @@ with models.DAG(
         file_types=FILE_TYPES,
         filter_ids=FILTER_IDS,
         filter_type=FILTER_TYPE,
-        version=VERSION
     )
     # [END howto_google_display_video_download_operator]]
 
