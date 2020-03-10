@@ -157,10 +157,12 @@ class CloudBaseHook(BaseHook):
         elif key_path:
             # Get credentials from a JSON file.
             if key_path.endswith('.json'):
-                self.log.debug('Getting connection using JSON key file %s', key_path)
+                scopes = self.scopes
+                self.log.debug('Getting connection using JSON key file %s with scopes: %s', key_path, scopes)
+
                 credentials = (
                     google.oauth2.service_account.Credentials.from_service_account_file(
-                        key_path, scopes=self.scopes)
+                        key_path, scopes=scopes)
                 )
                 project_id = credentials.project_id
             elif key_path.endswith('.p12'):
@@ -254,7 +256,10 @@ class CloudBaseHook(BaseHook):
         :return: the number of times each API request should be retried
         :rtype: int
         """
-        return self._get_field('num_retries') or 5
+        mum_retries_val = self._get_field('num_retries')
+        if mum_retries_val:
+            return int(mum_retries_val)
+        return 5
 
     @property
     def client_info(self) -> ClientInfo:

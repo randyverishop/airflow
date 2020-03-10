@@ -54,12 +54,20 @@ REPORT = {
 PARAMS = {"dataRange": "LAST_14_DAYS", "timezoneCode": "America/New_York"}
 # [END howto_display_video_env_variables]
 
-FILE_TYPES: list = ["AD"]
-FILTER_IDS: list = [6440317]
-FILTER_TYPE: str = "ADVERTISER_ID"
+
+FILE_TYPES: list = [
+    "AD",
+    "AD_GROUP",
+    "CAMPAIGN",
+    # "INSERTION_ORDER",
+    # "INVENTORY_SOURCE",
+    # "LINE_ITEM",
+]
+FILTER_IDS: list = [10956673]
+FILTER_TYPE: str = "CAMPAIGN_ID"
 VERSION = None
 
-body = {
+downloading_entities = {
         "fileTypes": FILE_TYPES,
         "filterIds": FILTER_IDS,
         "filterType": FILTER_TYPE
@@ -108,10 +116,10 @@ with models.DAG(
 
     # [START howto_google_display_video_download_operator]
     download = GoogleDisplayVideo360DownloadOperator(
-        task_id="download_entities",
-        file_types=FILE_TYPES,
-        filter_ids=FILTER_IDS,
-        filter_type=FILTER_TYPE,
+        task_id="download_entities", body=downloading_entities
+        # file_types=FILE_TYPES,
+        # filter_ids=FILTER_IDS,
+        # filter_type=FILTER_TYPE,
     )
     # [END howto_google_display_video_download_operator]]
 

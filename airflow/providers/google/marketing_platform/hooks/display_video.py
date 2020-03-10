@@ -128,41 +128,44 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
             .execute(num_retries=self.num_retries)
         )
 
-    def download(self,
-                 file_types: list,
-                 filter_type: str,
-                 filter_ids: list,
-                 version: Optional[str] = None) -> dict:
+    # def download(self,
+    #              file_types: list,
+    #              filter_type: str,
+    #              filter_ids: list,
+    #              version: Optional[str] = None) -> dict:
+
+    def download(self, body):
         """
         Retrieves entities in SDF format.
 
-        :param file_types: File types that will be returned.
-            If INVENTORY_SOURCE is requested, no other file types may be requested.
-        :type file_types: list
-        :param filter_type: Filter type used to filter entities to fetch.
-            PARTNER_ID and INVENTORY_SOURCE_ID may only be used when downloading inventory sources.
-        :type filter_type: str
-        :param filter_ids: The IDs of the specified filter type.
-            This is used to filter entities to fetch. At least one ID must be specified.
-            Only one ID is allowed for the ADVERTISER_ID filter type.
-            For INSERTION_ORDER_ID or LINE_ITEM_ID filter types all IDs must be from the same Advertiser.
-        :type filter_ids: list
-        :param version: SDF Version (column names, types, order)
-            in which the entities will be returned. Default to 3.1.
-        :type version: str
+        # :param file_types: File types that will be returned.
+        #     If INVENTORY_SOURCE is requested, no other file types may be requested.
+        # :type file_types: list
+        # :param filter_type: Filter type used to filter entities to fetch.
+        #     PARTNER_ID and INVENTORY_SOURCE_ID may only be used when downloading inventory sources.
+        # :type filter_type: str
+        # :param filter_ids: The IDs of the specified filter type.
+        #     This is used to filter entities to fetch. At least one ID must be specified.
+        #     Only one ID is allowed for the ADVERTISER_ID filter type.
+        #     For INSERTION_ORDER_ID or LINE_ITEM_ID filter types all IDs must be from the same Advertiser.
+        # :type filter_ids: list
+        # :param version: SDF Version (column names, types, order)
+        #     in which the entities will be returned. Default to 3.1.
+        # :type version: str
         """
 
-        body = {
-            "fileTypes": file_types,
-            "filterIds": filter_ids,
-            "filterType": filter_type
-        }
+        # body = {
+        #     "fileTypes": file_types,
+        #     "filterIds": filter_ids,
+        #     "filterType": filter_type,
+        #     "version:" version
+        # }
 
-        if version:
-            body['version'] = version
+        # if version:
+        #     body['version'] = version
 
-        self.log.info("D")
-
+        self.log.info("Downloading entities...")
+        print("body=", body)
         response = (
             self.get_conn()  # pylint: disable=no-member
             .sdf()

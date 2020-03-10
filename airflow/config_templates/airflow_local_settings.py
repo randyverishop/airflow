@@ -96,6 +96,16 @@ DEFAULT_LOGGING_CONFIG: Dict[str, Any] = {
             'level': LOG_LEVEL,
             'propagate': False,
         },
+        'googleapiclient': {
+            'handlers': ['task'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'oauth2client': {
+            'handlers': ['task'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
         'flask_appbuilder': {
             'handler': ['console'],
             'level': FAB_LOG_LEVEL,

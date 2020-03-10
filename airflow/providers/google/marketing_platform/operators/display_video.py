@@ -368,25 +368,28 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
     :type version: str
     """
 
-    template_fields = ("api_version", "file_types", "filter_type", "filter_ids", "version")
+    # template_fields = ("api_version", "file_types", "filter_type", "filter_ids", "version")
+    template_fields = ("api_version", )
 
     @apply_defaults
     def __init__(
         self,
-        file_types: list,
-        filter_type: str,
-        filter_ids: list,
-        version=None,
+        # file_types: list,
+        # filter_type: str,
+        # filter_ids: list,
+        # version=None,
+        body: dict,
         api_version: str = "v1.1",
         gcp_conn_id: str = "google_cloud_default",
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.file_types = file_types
-        self.filter_type = filter_type
-        self.filter_ids = filter_ids
-        self.version = version
+        # self.file_types = file_types
+        # self.filter_type = filter_type
+        # self.filter_ids = filter_ids
+        # self.version = version
+        self.body = body
         self.api_version = api_version
         self.gcp_conn_id = gcp_conn_id
 
@@ -398,8 +401,9 @@ class GoogleDisplayVideo360DownloadOperator(BaseOperator):
 
         self.log.info("Downloading entities...")
         hook.download(
-            file_types=self.file_types,
-            filter_type=self.filter_type,
-            filter_ids=self.filter_ids,
-            version=self.version
+            # file_types=self.file_types,
+            # filter_type=self.filter_type,
+            # filter_ids=self.filter_ids,
+            # version=self.version
+            body=self.body
         )
