@@ -165,7 +165,6 @@ class GoogleDisplayVideo360Hook(CloudBaseHook):
         #     body['version'] = version
 
         self.log.info("Downloading entities...")
-        print("body=", body)
         response = (
             self.get_conn()  # pylint: disable=no-member
             .sdf()
