@@ -45,6 +45,7 @@ with models.DAG(
     create_build_from_storage = CloudFirestoreExportDatabaseOperator(
         task_id="export_database_to_gcs",
         project_id=GCP_PROJECT_ID,
+        # database_id="AAA",
         body={
             "outputUriPrefix": GCP_EXPORT_DESTINATION_URL
         }

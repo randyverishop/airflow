@@ -100,13 +100,22 @@ DEFAULT_LOGGING_CONFIG: Dict[str, Any] = {
             'handler': ['console'],
             'level': FAB_LOG_LEVEL,
             'propagate': True,
-        }
+        },
     },
     'root': {
         'handlers': ['console'],
         'level': LOG_LEVEL,
     }
 }
+
+for a in ["google_auth_httplib2", "httplib2", "googleapiclient"]:
+    DEFAULT_LOGGING_CONFIG["loggers"][a] = {
+        'handlers': ['task', "console"],
+        'level': LOG_LEVEL,
+        'propagate': False,
+    }
+import httplib2
+httplib2.debuglevel = 4
 
 DEFAULT_DAG_PARSING_LOGGING_CONFIG: Dict[str, Dict[str, Dict[str, Any]]] = {
     'handlers': {

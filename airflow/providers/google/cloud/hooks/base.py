@@ -48,7 +48,10 @@ from airflow.hooks.base_hook import BaseHook
 log = logging.getLogger(__name__)
 
 
-_DEFAULT_SCOPES = ('https://www.googleapis.com/auth/cloud-platform',)  # type: Sequence[str]
+_DEFAULT_SCOPES = (
+    'https://www.googleapis.com/auth/cloud-platform',
+    'https://www.googleapis.com/auth/datastore'
+)  # type: Sequence[str]
 
 # Constants used by the mechanism of repeating requests in reaction to exceeding the temporary quota.
 INVALID_KEYS = [
@@ -218,7 +221,7 @@ class CloudBaseHook(BaseHook):
         """
         credentials = self._get_credentials()
         http = httplib2.Http()
-        http = set_user_agent(http, "airflow/" + version.version)
+        # http = set_user_agent(http, "airflow/" + version.version)
         authed_http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
         return authed_http
 

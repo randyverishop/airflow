@@ -20,7 +20,7 @@
 import time
 from typing import Any, Dict, Optional
 
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build, build_from_document
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.hooks.base import CloudBaseHook
@@ -66,11 +66,16 @@ class CloudFirestoreHook(CloudBaseHook):
         """
         if not self._conn:
             http_authorized = self._authorize()
-            self._conn = build("firestore", self.api_version, http=http_authorized, cache_discovery=False)
+            self._conn = build("firestore", self.api_version, cache_discovery=False)
+            self._conn = build_from_document(self._conn._rootDesc, http=http_authorized)
+            # self._conn = build("firestore", self.api_version, http=http_authorized, cache_discovery=False)
+            # import ipdb; ipdb.set_trace()
         return self._conn
 
     @CloudBaseHook.fallback_to_default_project_id
-    def export_documents(self, body: Dict, database_id: str, project_id: Optional[str] = None) -> Dict:
+    def export_documents(
+        self, body: Dict, database_id: str = "(default)", project_id: Optional[str] = None
+    ) -> Dict:
         """
         Starts a build with the specified configuration.
 
@@ -91,6 +96,7 @@ class CloudFirestoreHook(CloudBaseHook):
 
         name = f"projects/{project_id}/databases/{database_id}"
 
+        import ipdb; ipdb.set_trace()
         operation = (
             service.projects()  # pylint: disable=no-member
             .databases()
