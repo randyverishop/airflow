@@ -32,7 +32,7 @@ from airflow.utils import dates
 
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "example-project")
 
-GCP_EXPORT_DESTINATION_URL = os.environ.get("GCP_CLOUD_BUILD_ARCHIVE_URL", "gs://example-bucket/namespace/")
+GCP_EXPORT_DESTINATION_URL = os.environ.get("G_PROJECT_ARCHIVE_URL", "gs://example-bucket/namespace/")
 
 
 with models.DAG(
