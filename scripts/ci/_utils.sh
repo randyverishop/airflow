@@ -38,6 +38,9 @@ function verbose_docker {
 }
 
 function initialize_breeze_environment {
+    # default python version
+    PYTHON_VERSION=${PYTHON_VERSION:="3.6"}
+
     AIRFLOW_SOURCES=${AIRFLOW_SOURCES:=$(cd "${MY_DIR}/../../" && pwd)}
     export AIRFLOW_SOURCES
 
@@ -980,7 +983,9 @@ function build_image_on_ci() {
         else
             touch "${BUILD_CACHE_DIR}"/.skip_tests
         fi
-    elif [[ ${TRAVIS_JOB_NAME} == *"documentation"* ]]; then
+    elif [[ ${TRAVIS_JOB_NAME} == *"documentation"* || \
+            ${TRAVIS_JOB_NAME} == *"backport packages"* || \
+            ${TRAVIS_JOB_NAME} == *"Generate requirements"* ]]; then
         rebuild_ci_image_if_needed
     else
         echo
