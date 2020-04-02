@@ -20,9 +20,11 @@ import datetime
 import logging
 import socket
 from datetime import timedelta
-from typing import Any, Optional
+from os import path
+from typing import Any
 from urllib.parse import urlparse
 
+import connexion
 import flask
 import flask_login
 import pendulum
@@ -40,14 +42,14 @@ from airflow.utils.json import AirflowJsonEncoder
 from airflow.www.static_config import configure_manifest_files
 
 app = None  # type: Any
-appbuilder = None  # type: Optional[AppBuilder]
 csrf = CSRFProtect()
 
+# airflow/www/app.py => airflow/
+ROOT_APP_DIR = path.abspath(path.join(path.dirname(__file__), path.pardir))
 log = logging.getLogger(__name__)
 
 
 def create_app(config=None, testing=False, app_name="Airflow"):
-    global app, appbuilder
     app = Flask(__name__)
     app.secret_key = conf.get('webserver', 'SECRET_KEY')
 
@@ -70,6 +72,7 @@ def create_app(config=None, testing=False, app_name="Airflow"):
     app.json_encoder = AirflowJsonEncoder
 
     csrf.init_app(app)
+
     db = SQLA()
     db.session = settings.Session
     db.init_app(app)
@@ -209,9 +212,21 @@ def create_app(config=None, testing=False, app_name="Airflow"):
             app.register_error_handler(500, views.show_traceback)
             app.register_error_handler(404, views.circles)
 
+        def init_api_connexion(app: Flask):
+            spec_dir = path.join(ROOT_APP_DIR, 'api_connexion', 'openapi')
+            connexion_app = connexion.App(__name__, specification_dir=spec_dir, skip_error_handlers=True)
+            connexion_app.app = app
+            connexion_app.add_api(
+                specification='v1.yaml',
+                base_path='/api/v1',
+                validate_responses=True,
+                strict_validation=False
+            )
+
         init_views(appbuilder)
         init_plugin_blueprints(app)
         init_error_handlers(app)
+        init_api_connexion(app)
 
         if conf.getboolean('webserver', 'UPDATE_FAB_PERMS'):
             security_manager = appbuilder.sm
@@ -295,8 +310,8 @@ def root_app(env, resp):
 
 
 def cached_app(config=None, testing=False):
-    global app, appbuilder
-    if not app or not appbuilder:
+    global app
+    if not app:
         base_url = urlparse(conf.get('webserver', 'base_url'))[2]
         if not base_url or base_url == '/':
             base_url = ""
@@ -316,6 +331,7 @@ def cached_app(config=None, testing=False):
 
 
 def cached_appbuilder(config=None, testing=False):
-    global appbuilder
+    global app
     cached_app(config=config, testing=testing)
-    return appbuilder
+    flask_app = next(iter(app.mounts.values()))
+    return flask_app.appbuilder
