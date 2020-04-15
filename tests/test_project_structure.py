@@ -89,13 +89,11 @@ class TestProjectStructure(unittest.TestCase):
         expected_test_files = (f for f in expected_test_files if not f.endswith("__init__.py"))
         # Change airflow/ to tests/
         expected_test_files = (
-            f'tests/{f.partition("/")[2]}'
-            for f in expected_test_files if not f.endswith("__init__.py")
+            f'tests/{f.partition("/")[2]}' for f in expected_test_files
         )
         # Add test_ prefix to filename
         expected_test_files = (
-            f'{f.rpartition("/")[0]}/test_{f.rpartition("/")[2]}'
-            for f in expected_test_files if not f.endswith("__init__.py")
+            f'{f.rpartition("/")[0]}/test_{f.rpartition("/")[2]}' for f in expected_test_files
         )
 
         current_test_files = glob.glob(f"{ROOT_FOLDER}/tests/providers/**/*.py", recursive=True)
@@ -108,7 +106,7 @@ class TestProjectStructure(unittest.TestCase):
         current_test_files = set(current_test_files)
 
         missing_tests_files = expected_test_files - expected_test_files.intersection(current_test_files)
-        self.assertEqual(set(), missing_tests_files - MISSING_TEST_FILES)
+        self.assertEqual(MISSING_TEST_FILES, missing_tests_files)
 
     def test_keep_missing_test_files_update(self):
         new_test_files = []
@@ -169,6 +167,33 @@ class TestGoogleProviderProjectStructure(unittest.TestCase):
         'tasks',
         'text_to_speech',
         'translate_speech'
+    }
+
+    MISSING_SYSTEM_TEST_FILES = {
+        'tests/providers/google/ads/operators/test_ads_system.py',
+        'tests/providers/google/cloud/operators/test_adls_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_bigquery_to_bigquery_system.py',
+        'tests/providers/google/cloud/operators/test_bigquery_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_bigquery_to_mysql_system.py',
+        'tests/providers/google/cloud/operators/test_cassandra_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_cloud_build_system.py',
+        'tests/providers/google/cloud/operators/test_datacatalog_system.py',
+        'tests/providers/google/cloud/operators/test_datafusion_system.py',
+        'tests/providers/google/cloud/operators/test_gcs_to_bigquery_system.py',
+        'tests/providers/google/cloud/operators/test_gcs_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_local_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_mssql_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_mysql_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_s3_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_sheets_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_speech_to_text_system.py',
+        'tests/providers/google/cloud/operators/test_sql_to_gcs_system.py',
+        'tests/providers/google/cloud/operators/test_stackdriver_system.py',
+        'tests/providers/google/cloud/operators/test_text_to_speech_system.py',
+        'tests/providers/google/cloud/operators/test_translate_speech_system.py',
+        'tests/providers/google/facebook_ads_to_gcs/operators/test_ads_system.py',
+        'tests/providers/google/suite/operators/test_gcs_to_gdrive_system.py',
+        'tests/providers/google/suite/operators/test_gcs_to_sheets_system.py'
     }
 
     def test_example_dags(self):
@@ -244,6 +269,47 @@ class TestGoogleProviderProjectStructure(unittest.TestCase):
         # Exclude __init__.py and pycache
         resource_files = (f for f in resource_files if not f.endswith("__init__.py"))
         return resource_files
+
+    def test_providers_modules_should_have_tests(self):
+        """
+        Assert every module in /airflow/providers/google/*/operators/ has a
+        corresponding test_*_system.py file in tests/providers/google/*/operators/.
+        """
+        # TODO: Should we extend this test to cover other directories?
+        expected_test_files = glob.glob(
+            f"{ROOT_FOLDER}/airflow/providers/google/*/operators/*.py", recursive=True
+        )
+        # Make path relative
+        expected_test_files = (os.path.relpath(f, ROOT_FOLDER) for f in expected_test_files)
+        # Exclude example_dags
+        expected_test_files = (f for f in expected_test_files if "/example_dags/" not in f)
+        # Exclude __init__.py
+        expected_test_files = (f for f in expected_test_files if not f.endswith("__init__.py"))
+        # Change airflow/ to tests/
+        expected_test_files = (
+            f'tests/{f.partition("/")[2]}' for f in expected_test_files
+        )
+        # Add test_ prefix to filename
+        expected_test_files = (
+            f'{f.rpartition("/")[0]}/test_{f.rpartition("/")[2]}' for f in expected_test_files
+        )
+        # Add _system.py suffix to filename
+        expected_test_files = (
+            f'{f.rpartition(".")[0]}_system.py' for f in expected_test_files
+        )
+        current_test_files = glob.glob(
+            f"{ROOT_FOLDER}/tests/providers/google/*/operators/*_system.py", recursive=True
+        )
+        # Make path relative
+        current_test_files = (os.path.relpath(f, ROOT_FOLDER) for f in current_test_files)
+        # Exclude __init__.py
+        current_test_files = (f for f in current_test_files if not f.endswith("__init__.py"))
+
+        expected_test_files = set(expected_test_files)
+        current_test_files = set(current_test_files)
+
+        missing_tests_files = expected_test_files - expected_test_files.intersection(current_test_files)
+        self.assertEqual(self.MISSING_SYSTEM_TEST_FILES, missing_tests_files)
 
 
 class TestOperatorsHooks(unittest.TestCase):
