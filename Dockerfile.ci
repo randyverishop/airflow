@@ -138,6 +138,7 @@ RUN mkdir -pv /usr/share/man/man1 \
       # To run virtualenv tests with python 2
       libpython2.7-stdlib \
       lsb-release \
+      nano \
       net-tools \
       openssh-client \
       openssh-server \
