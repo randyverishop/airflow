@@ -1196,18 +1196,17 @@ components:
           type: string
           readOnly: true
         is_paused:
-          type: string
+          type: boolean
         is_subdag:
-          type: string
-          readOnly: true
-        is_active:
-          type: string
+          type: boolean
           readOnly: true
         fileloc:
           type: string
           readOnly: true
         owners:
-          type: string
+          type: array
+          items:
+            type: string
           readOnly: true
         description:
           type: string
@@ -1215,7 +1214,6 @@ components:
         schedule_interval:
           oneOf:
             - $ref: '#/components/schemas/ScheduleInterval'
-          readOnly: true
         tags:
           type: array
           items:
@@ -1225,7 +1223,7 @@ components:
     DAGCollection:
       type: object
       properties:
-        dag_model:
+        dags:
           type: array
           items:
             $ref: '#/components/schemas/DAG'
@@ -1928,12 +1926,12 @@ components:
         - $ref: '#/components/schemas/RelativeDelta'
         - $ref: '#/components/schemas/CronExpression'
       discriminator:
-        propertyName: objectType
+        propertyName: __type
 
     TimeDelta:
       type: object
       properties:
-        objectType: {type: string}
+        __type: {type: string}
         days: {type: integer}
         seconds: {type: integer}
         microsecond: {type: integer}
@@ -1942,7 +1940,7 @@ components:
       # TODO: Why we need these fields?
       type: object
       properties:
-        objectType: {type: string}
+        __type: {type: string}
         years: {type: integer}
         months: {type: integer}
         days: {type: integer}
@@ -1962,7 +1960,7 @@ components:
     CronExpression:
       type: object
       properties:
-        objectType: {type: string}
+        __type: {type: string}
         value: {type: string}
 
     Timezone:

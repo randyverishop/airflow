@@ -24,6 +24,8 @@ import pytest
 
 # We should set these before loading _any_ of the rest of airflow so that the
 # unit test mode config is set as early as possible.
+from airflow.utils.session import provide_session, create_session
+
 tests_directory = os.path.dirname(os.path.realpath(__file__))
 
 os.environ["AIRFLOW__CORE__DAGS_FOLDER"] = os.path.join(tests_directory, "dags")
@@ -65,6 +67,12 @@ def reset_db():
     from airflow.utils import db
     db.resetdb()
     yield
+
+
+@pytest.fixture()
+def session():
+    with create_session() as session:
+        yield session
 
 
 ALLOWED_TRACE_SQL_COLUMNS = ['num', 'time', 'trace', 'sql', 'parameters', 'count']
