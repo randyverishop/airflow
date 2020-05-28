@@ -702,6 +702,7 @@ INSTALL_REQUIREMENTS = [
     'lazy_object_proxy~=1.3',
     'lockfile>=0.12.2',
     'markdown>=2.5.2, <3.0',
+    'marshmallow-oneofschema<=2.0.1',
     'pandas>=0.17.1, <2.0',
     'pendulum==1.4.4',
     'pep562~=1.0;python_version<"3.7"',

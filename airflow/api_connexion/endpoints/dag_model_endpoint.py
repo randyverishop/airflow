@@ -20,16 +20,23 @@
 from flask import request
 
 from airflow.api_connexion import parameters
-from airflow.api_connexion.schemas.dag_schema import DAGCollection, dags_collection_schema
+from airflow.api_connexion.schemas.dag_schema import DAGCollection, dag_schema, dags_collection_schema
 from airflow.models import DagModel
 from airflow.utils.session import provide_session
 
 
-def get_dag():
+@provide_session
+def get_dag(dag_id, session):
     """
     Get basic information about a DAG.
     """
-    raise NotImplementedError("Not implemented yet.")
+    query = session.query(DagModel)
+
+    query = query.filter(DagModel.dag_id == dag_id)
+
+    dag = query.one_or_none()
+
+    return dag_schema.dump(dag)
 
 
 @provide_session
@@ -45,7 +52,7 @@ def get_dags(session):
 
     dags = query.all()
 
-    return dags_collection_schema.dump(DAGCollection(dag_model=dags, total_entries=0))
+    return dags_collection_schema.dump(DAGCollection(dags=dags, total_entries=0))
 
 
 def patch_dag():

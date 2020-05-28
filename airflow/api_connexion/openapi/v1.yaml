@@ -1195,30 +1195,37 @@ components:
         root_dag_id:
           type: string
           readOnly: true
+          nullable: true
         is_paused:
           type: boolean
+          nullable: true
         is_subdag:
           type: boolean
           readOnly: true
+          nullable: true
         fileloc:
           type: string
           readOnly: true
+          nullable: true
         owners:
           type: array
           items:
             type: string
           readOnly: true
+          nullable: true
         description:
           type: string
           readOnly: true
+          nullable: true
         schedule_interval:
-          oneOf:
+          anyOf:
             - $ref: '#/components/schemas/ScheduleInterval'
         tags:
           type: array
           items:
             $ref: '#/components/schemas/Tag'
           readOnly: true
+          nullable: true
 
     DAGCollection:
       type: object
@@ -1922,9 +1929,16 @@ components:
     # Common data type
     ScheduleInterval:
       oneOf:
-        - $ref: '#/components/schemas/TimeDelta'
-        - $ref: '#/components/schemas/RelativeDelta'
-        - $ref: '#/components/schemas/CronExpression'
+#        - $ref: '#/components/schemas/TimeDelta'
+#        - $ref: '#/components/schemas/RelativeDelta'
+#        - $ref: '#/components/schemas/CronExpression'
+        - type: object
+          properties:
+            __type: {type: string}
+            value: {type: string}
+          discriminator:
+            propertyName: __type
+
       discriminator:
         propertyName: __type
 
