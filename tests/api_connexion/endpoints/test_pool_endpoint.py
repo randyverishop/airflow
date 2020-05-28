@@ -14,40 +14,78 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import unittest
 
 import pytest
 
+from airflow.models import Pool
+from airflow.utils.session import provide_session
+from airflow.www import app
+from tests.test_utils.db import clear_db_pools
 
-class TestDeletePool:
+
+class TestBasePoolEndpoints(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.app, _ = app.create_app(testing=True)  # type:ignore
+
+    def setUp(self) -> None:
+        self.client = self.app.test_client()  # type:ignore
+        super().setUp()
+        clear_db_pools()
+
+    def tearDown(self) -> None:
+        clear_db_pools()
+
+
+class TestDeletePool(TestBasePoolEndpoints):
     @pytest.mark.skip(reason="Not implemented yet")
-    def test_should_response_200(self, http_client):
-        response = http_client.delete("/api/v1/pools/1")
+    def test_should_response_200(self):
+        response = self.client.delete("/api/v1/pools/1")
         assert response.status_code == 204
 
 
-class TestGetPool:
+class TestGetPool(TestBasePoolEndpoints):
+    @provide_session
+    def test_should_response_200(self, session):
+        session.add(Pool(pool="test-api-pool", slots=32))
+        session.commit()
+
+        response = self.client.get("/api/v1/pools/test-api-pool")
+        assert response.status_code == 200
+
+        self.assertEqual(
+            {'name': 'test-api-pool', 'occupied_slots': 0, 'queued_slots': 0, 'slots': 32}, response.json
+        )
+
+
+class TestGetPools(TestBasePoolEndpoints):
+    @provide_session
+    def test_should_response_200(self, session):
+        response = self.client.get("/api/v1/pools")
+        session.add(Pool(pool="test-api-pool"))
+        session.commit()
+        assert response.status_code == 200
+
+        self.assertEqual(
+            {
+                "pools": [{"name": "default_pool", "occupied_slots": 0, "queued_slots": 0, "slots": 128}],
+                "total_entries": 1,
+            },
+            response.json,
+        )
+
+
+class TestPatchPool(TestBasePoolEndpoints):
     @pytest.mark.skip(reason="Not implemented yet")
-    def test_should_response_200(self, http_client):
-        response = http_client.get("/api/v1/pools/1")
+    def test_should_response_200(self):
+        response = self.client.patch("/api/v1/pools/1")
         assert response.status_code == 200
 
 
-class TestGetPools:
+class TestPostPool(TestBasePoolEndpoints):
     @pytest.mark.skip(reason="Not implemented yet")
-    def test_should_response_200(self, http_client):
-        response = http_client.get("/api/v1/pools")
-        assert response.status_code == 200
-
-
-class TestPatchPool:
-    @pytest.mark.skip(reason="Not implemented yet")
-    def test_should_response_200(self, http_client):
-        response = http_client.patch("/api/v1/pools/1")
-        assert response.status_code == 200
-
-
-class TestPostPool:
-    @pytest.mark.skip(reason="Not implemented yet")
-    def test_should_response_200(self, http_client):
-        response = http_client.post("/api/v1/pool")
+    def test_should_response_200(self):
+        response = self.client.post("/api/v1/pool")
         assert response.status_code == 200
