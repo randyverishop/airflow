@@ -57,15 +57,15 @@ def jenkins_request_with_headers(jenkins_server, req):
         if e.code in [401, 403, 500]:
             raise JenkinsException(
                 'Error in request. Possibly authentication failed [%s]: %s' % (e.code, e.msg)
-            )
+            ) from e
         elif e.code == 404:
-            raise jenkins.NotFoundException('Requested item could not be found')
+            raise jenkins.NotFoundException('Requested item could not be found') from e
         else:
             raise
     except socket.timeout as e:
-        raise jenkins.TimeoutException('Error in request: %s' % e)
+        raise jenkins.TimeoutException('Error in request: %s' % e) from e
     except URLError as e:
-        raise JenkinsException('Error in request: %s' % e.reason)
+        raise JenkinsException('Error in request: %s' % e.reason) from e
 
 
 class JenkinsJobTriggerOperator(BaseOperator):
@@ -223,14 +223,14 @@ class JenkinsJobTriggerOperator(BaseOperator):
                 # pylint: disable=no-member
                 raise AirflowException(
                     'Jenkins job status check failed. Final error was: '
-                    f'{err.resp.status}')
+                    f'{err.resp.status}') from err
             except jenkins.JenkinsException as err:
                 raise AirflowException(
                     f'Jenkins call failed with error : {err}, if you have parameters '
                     'double check them, jenkins sends back '
                     'this exception for unknown parameters'
                     'You can also check logs for more details on this exception '
-                    '(jenkins_url/log/rss)')
+                    '(jenkins_url/log/rss)') from err
         if build_info:
             # If we can we return the url of the job
             # for later use (like retrieving an artifact)

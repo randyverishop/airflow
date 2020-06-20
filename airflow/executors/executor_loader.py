@@ -91,11 +91,10 @@ class ExecutorLoader:
         try:
             executor = import_string(executor_name)
         except ImportError as e:
-            log.error(e)
             raise AirflowConfigException(
                 f'The module/attribute could not be loaded. Please check "executor" key in "core" section. '
                 f'Current value: "{executor_name}".'
-            )
+            ) from e
         log.info("Loaded executor: %s", executor_name)
 
         return executor

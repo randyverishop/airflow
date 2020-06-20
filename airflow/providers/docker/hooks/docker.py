@@ -84,5 +84,4 @@ class DockerHook(BaseHook, LoggingMixin):
             )
             self.log.debug('Login successful')
         except APIError as docker_error:
-            self.log.error('Docker registry login failed: %s', str(docker_error))
-            raise AirflowException(f'Docker registry login failed: {docker_error}')
+            raise AirflowException(f'Docker registry login failed: {docker_error}') from docker_error

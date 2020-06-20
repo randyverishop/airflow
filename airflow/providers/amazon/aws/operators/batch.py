@@ -174,7 +174,7 @@ class AwsBatchOperator(BaseOperator):
 
         except Exception as e:
             self.log.error("AWS Batch job (%s) failed submission", self.job_id)
-            raise AirflowException(e)
+            raise AirflowException(e) from e
 
     def monitor_job(self, context: Dict):  # pylint: disable=unused-argument
         """
@@ -193,4 +193,4 @@ class AwsBatchOperator(BaseOperator):
 
         except Exception as e:
             self.log.error("AWS Batch job (%s) failed monitoring", self.job_id)
-            raise AirflowException(e)
+            raise AirflowException(e) from e

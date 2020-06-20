@@ -353,7 +353,7 @@ class CloudSQLHook(GoogleBaseHook):
         except HttpError as ex:
             raise AirflowException(
                 'Importing instance {} failed: {}'.format(instance, ex.content)
-            )
+            ) from ex
 
     def _wait_for_operation_to_complete(self, project_id: str, operation_name: str) -> None:
         """

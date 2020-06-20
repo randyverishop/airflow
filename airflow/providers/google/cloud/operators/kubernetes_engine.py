@@ -174,11 +174,11 @@ class GKECreateClusterOperator(BaseOperator):
             (isinstance(self.body, dict) and "name" in self.body and "initial_node_count" in self.body) or
             (getattr(self.body, "name", None) and getattr(self.body, "initial_node_count", None))
         ):
-            self.log.error(
+            raise AirflowException(
+                "Operator has incorrect or missing input. "
                 "One of (project_id, location, body, body['name'], "
                 "body['initial_node_count']) is missing or incorrect"
             )
-            raise AirflowException("Operator has incorrect or missing input.")
 
     def execute(self, context):
         hook = GKEHook(gcp_conn_id=self.gcp_conn_id, location=self.location)

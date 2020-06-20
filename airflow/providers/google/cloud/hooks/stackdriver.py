@@ -360,7 +360,7 @@ class StackdriverHook(GoogleBaseHook):
         except HttpError as err:
             raise AirflowException(
                 'Delete alerting policy failed. Error was {}'.format(err.content)
-            )
+            ) from err
 
     @GoogleBaseHook.fallback_to_default_project_id
     def list_notification_channels(
@@ -641,4 +641,4 @@ class StackdriverHook(GoogleBaseHook):
         except HttpError as err:
             raise AirflowException(
                 'Delete notification channel failed. Error was {}'.format(err.content)
-            )
+            ) from err

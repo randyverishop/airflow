@@ -230,6 +230,6 @@ class WinRMHook(BaseHook):
         except Exception as error:
             error_msg = "Error connecting to host: {0}, error: {1}".format(self.remote_host, error)
             self.log.error(error_msg)
-            raise AirflowException(error_msg)
+            raise AirflowException(error_msg) from error
 
         return self.client

@@ -54,11 +54,11 @@ def get_task_runner(local_task_job):
         log.debug("Loading task runner from custom path: %s", _TASK_RUNNER_NAME)
         try:
             task_runner_class = import_string(_TASK_RUNNER_NAME)
-        except ImportError:
+        except ImportError as e:
             raise AirflowConfigException(
                 f'The task runner could not be loaded. Please check "executor" key in "core" section. '
                 f'Current value: "{_TASK_RUNNER_NAME}".'
-            )
+            ) from e
 
     task_runner = task_runner_class(local_task_job)
     return task_runner

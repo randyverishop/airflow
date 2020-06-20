@@ -149,10 +149,10 @@ class HttpHook(BaseHook):
         """
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.HTTPError as e:
             self.log.error("HTTP error: %s", response.reason)
             self.log.error(response.text)
-            raise AirflowException(str(response.status_code) + ":" + response.reason)
+            raise AirflowException(str(response.status_code) + ":" + response.reason) from e
 
     def run_and_check(self, session, prepped_request, extra_options):
         """

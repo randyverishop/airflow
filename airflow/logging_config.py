@@ -64,7 +64,7 @@ def configure_logging():
         log.error('Unable to load the config, contains a configuration error.')
         # When there is an error in the config, escalate the exception
         # otherwise Airflow would silently fall back on the default config
-        raise e
+        raise e from e
 
     validate_logging_config(logging_config)
 
