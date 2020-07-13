@@ -32,7 +32,7 @@ Prerequisite Tasks
 .. _howto/operator:GCSToBigQueryOperator:
 
 GCSToBigQueryOperator
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 Use the
 :class:`~airflow.providers.google.cloud.transfers.gcs_to_bigquery.GCSToBigQueryOperator`
@@ -46,7 +46,7 @@ to execute a BigQuery load job.
 .. _howto/operator:GCSBucketCreateAclEntryOperator:
 
 GCSBucketCreateAclEntryOperator
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Creates a new ACL entry on the specified bucket.
 
@@ -80,7 +80,7 @@ See Google Cloud Storage Documentation to `create a new ACL entry for a bucket
 .. _howto/operator:GCSObjectCreateAclEntryOperator:
 
 GCSObjectCreateAclEntryOperator
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Creates a new ACL entry on the specified object.
 

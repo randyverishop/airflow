@@ -34,8 +34,11 @@ Prerequisite Tasks
 .. include:: /howto/operator/google/_partials/prerequisite_tasks.rst
 
 
-Pipeline Configuration
-^^^^^^^^^^^^^^^^^^^^^^
+.. _howto/operator:LifeSciencesRunPipelineOperator:
+
+Running a pipeline
+^^^^^^^^^^^^^^^^^^
+
 In order to run the pipeline, it is necessary to configure the request body.
 Here is an example of the pipeline configuration with a single action.
 
@@ -56,10 +59,6 @@ The pipeline can also be configured with multiple action.
 Read about the `request body parameters <https://cloud.google.com/life-sciences/docs/reference/rest/v2beta/projects.locations.pipelines/run?authuser=1#request-body/>`__
 to understand all the fields you can include in the configuration
 
-.. _howto/operator:LifeSciencesRunPipelineOperator:
-
-Running a pipeline
--------------------------------
 Use the
 :class:`~airflow.providers.google.cloud.operators.life_sciences.LifeSciencesRunPipelineOperator`
 to execute pipelines.

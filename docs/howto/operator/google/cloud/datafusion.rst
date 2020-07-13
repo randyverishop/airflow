@@ -18,7 +18,7 @@
     under the License.
 
 Google DataFusion Operators
-=======================================
+===========================
 
 Cloud Data Fusion is a fully managed, cloud-native data integration service that helps
 users efficiently build and manage ETL/ELT data pipelines. With a graphical interface
@@ -38,8 +38,8 @@ Prerequisite Tasks
 
 .. _howto/operator:CloudDataFusionRestartInstanceOperator:
 
-Restart DataFusion Instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Restart a instance
+^^^^^^^^^^^^^^^^^^
 
 To restart Data Fusion instance use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionRestartInstanceOperator`.
@@ -57,8 +57,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionDeleteInstanceOperator:
 
-Delete DataFusion Instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete a instance
+^^^^^^^^^^^^^^^^^
 
 To delete Data Fusion instance use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionDeleteInstanceOperator`.
@@ -77,8 +77,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionCreateInstanceOperator:
 
-Create DataFusion Instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create an instance
+^^^^^^^^^^^^^^^^^^
 
 To create Data Fusion instance use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionCreateInstanceOperator`.
@@ -97,8 +97,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionUpdateInstanceOperator:
 
-Update DataFusion Instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Update a instance
+^^^^^^^^^^^^^^^^^
 
 To update Data Fusion instance use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionUpdateInstanceOperator`.
@@ -116,8 +116,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionGetInstanceOperator:
 
-Get DataFusion Instance
-^^^^^^^^^^^^^^^^^^^^^^^
+Get an instance
+^^^^^^^^^^^^^^^
 
 To retrieve Data Fusion instance use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionGetInstanceOperator`.
@@ -136,8 +136,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionCreatePipelineOperator:
 
-Create a DataFusion pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create an pipeline
+^^^^^^^^^^^^^^^^^^
 
 To create Data Fusion pipeline use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionCreatePipelineOperator`.
@@ -155,8 +155,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionStartPipelineOperator:
 
-Start a DataFusion pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Start a pipeline
+^^^^^^^^^^^^^^^^
 
 To start Data Fusion pipeline use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionStartPipelineOperator`.
@@ -174,8 +174,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionStopPipelineOperator:
 
-Stop a DataFusion pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Stop a pipeline
+^^^^^^^^^^^^^^^
 
 To stop Data Fusion pipeline use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionStopPipelineOperator`.
@@ -193,8 +193,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionDeletePipelineOperator:
 
-Delete a DataFusion pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete a pipeline
+^^^^^^^^^^^^^^^^^
 
 To delete Data Fusion pipeline use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionDeletePipelineOperator`.
@@ -213,8 +213,8 @@ The result is saved to :ref:`XCom <concepts:xcom>`, which allows it to be used b
 
 .. _howto/operator:CloudDataFusionListPipelinesOperator:
 
-List DataFusion pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+List pipelines
+^^^^^^^^^^^^^^
 
 To list Data Fusion pipelines use:
 :class:`~airflow.providers.google.cloud.operators.datafusion.CloudDataFusionListPipelinesOperator`.

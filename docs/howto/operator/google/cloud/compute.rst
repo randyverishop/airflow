@@ -32,7 +32,7 @@ Prerequisite Tasks
 .. _howto/operator:ComputeEngineStartInstanceOperator:
 
 ComputeEngineStartInstanceOperator
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the
 :class:`~airflow.providers.google.cloud.operators.compute.ComputeEngineStartInstanceOperator`
@@ -77,7 +77,7 @@ See Google Compute Engine API documentation to `start an instance
 .. _howto/operator:ComputeEngineStopInstanceOperator:
 
 ComputeEngineStopInstanceOperator
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the operator to stop Google Compute Engine instance.
 
@@ -122,17 +122,12 @@ See Google Compute Engine API documentation to `stop an instance
 .. _howto/operator:ComputeEngineSetMachineTypeOperator:
 
 ComputeEngineSetMachineTypeOperator
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the operator to change machine type of a Google Compute Engine instance.
 
 For parameter definition, take a look at
 :class:`~airflow.providers.google.cloud.operators.compute.ComputeEngineSetMachineTypeOperator`.
-
-Arguments
-"""""""""
-
-
 
 Using the operator
 """"""""""""""""""
@@ -172,7 +167,7 @@ See Google Compute Engine API documentation to `set the machine type
 .. _howto/operator:ComputeEngineCopyInstanceTemplateOperator:
 
 ComputeEngineCopyInstanceTemplateOperator
------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the operator to copy an existing Google Compute Engine instance template
 applying a patch to it.
@@ -223,7 +218,7 @@ See Google Compute Engine API documentation to `create a new instance with an ex
 .. _howto/operator:ComputeEngineInstanceGroupUpdateManagerTemplateOperator:
 
 ComputeEngineInstanceGroupUpdateManagerTemplateOperator
--------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use the operator to update a template in Google Compute Engine Instance Group Manager.
 
@@ -284,7 +279,7 @@ See Google Compute Engine API documentation to `manage a group instance
 <https://cloud.google.com/compute/docs/reference/rest/v1/instanceGroupManagers>`_.
 
 Reference
----------
+^^^^^^^^^
 
 For further information, look at:
 

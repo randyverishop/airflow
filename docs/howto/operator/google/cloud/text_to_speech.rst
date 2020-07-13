@@ -19,6 +19,10 @@
 Google Cloud Text to Speech Operators
 =====================================
 
+.. contents::
+  :depth: 1
+  :local:
+
 Prerequisite Tasks
 ------------------
 
