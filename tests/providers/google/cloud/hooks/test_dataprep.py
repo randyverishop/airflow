@@ -43,7 +43,7 @@ class TestGoogleDataprepHook:
         assert mock_hook._token == TOKEN
 
     @patch("airflow.providers.google.cloud.hooks.dataprep.requests.get")
-    def test_mock_should_be_called_once_with_params(self, mock_get_request, mock_hook):
+    def test_get_jobs_for_job_group_should_be_called_once_with_params(self, mock_get_request, mock_hook):
         mock_hook.get_jobs_for_job_group(job_id=JOB_ID)
         mock_get_request.assert_called_once_with(
             f"{URL}/{JOB_ID}/jobs",
@@ -57,7 +57,7 @@ class TestGoogleDataprepHook:
         "airflow.providers.google.cloud.hooks.dataprep.requests.get",
         side_effect=[HTTPError(), mock.MagicMock()],
     )
-    def test_should_pass_after_retry(self, mock_get_request, mock_hook):
+    def test_get_jobs_for_job_group_should_pass_after_retry(self, mock_get_request, mock_hook):
         mock_hook.get_jobs_for_job_group(JOB_ID)
         assert mock_get_request.call_count == 2
 
@@ -65,7 +65,7 @@ class TestGoogleDataprepHook:
         "airflow.providers.google.cloud.hooks.dataprep.requests.get",
         side_effect=[mock.MagicMock(), HTTPError()],
     )
-    def test_should_not_retry_after_success(self, mock_get_request, mock_hook):
+    def test_get_jobs_for_job_group_should_not_retry_after_success(self, mock_get_request, mock_hook):
         mock_hook.get_jobs_for_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
         mock_hook.get_jobs_for_job_group(JOB_ID)
         assert mock_get_request.call_count == 1
@@ -80,7 +80,7 @@ class TestGoogleDataprepHook:
             mock.MagicMock(),
         ],
     )
-    def test_should_retry_after_four_errors(self, mock_get_request, mock_hook):
+    def test_get_jobs_for_job_group_should_retry_after_four_errors(self, mock_get_request, mock_hook):
         mock_hook.get_jobs_for_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
         mock_hook.get_jobs_for_job_group(JOB_ID)
         assert mock_get_request.call_count == 5
@@ -89,9 +89,63 @@ class TestGoogleDataprepHook:
         "airflow.providers.google.cloud.hooks.dataprep.requests.get",
         side_effect=[HTTPError(), HTTPError(), HTTPError(), HTTPError(), HTTPError()],
     )
-    def test_raise_error_after_five_calls(self, mock_get_request, mock_hook):
+    def test_get_jobs_for_job_group_raise_error_after_five_calls(self, mock_get_request, mock_hook):
         with pytest.raises(RetryError) as err:
             mock_hook.get_jobs_for_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
             mock_hook.get_jobs_for_job_group(JOB_ID)
+        assert "HTTPError" in str(err)
+        assert mock_get_request.call_count == 5
+
+    @patch("airflow.providers.google.cloud.hooks.dataprep.requests.get")
+    def test_get_job_group_mock_should_be_called_once_with_params(self, mock_get_request, mock_hook):
+        mock_hook.get_job_group(job_id=JOB_ID)
+        mock_get_request.assert_called_once_with(
+            f"{URL}/{JOB_ID}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {TOKEN}",
+            },
+        )
+
+    @patch(
+        "airflow.providers.google.cloud.hooks.dataprep.requests.get",
+        side_effect=[HTTPError(), mock.MagicMock()],
+    )
+    def test_get_job_group_should_pass_after_retry(self, mock_get_request, mock_hook):
+        mock_hook.get_job_group(JOB_ID)
+        assert mock_get_request.call_count == 2
+
+    @patch(
+        "airflow.providers.google.cloud.hooks.dataprep.requests.get",
+        side_effect=[mock.MagicMock(), HTTPError()],
+    )
+    def test_get_job_group_should_not_retry_after_success(self, mock_get_request, mock_hook):
+        mock_hook.get_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
+        mock_hook.get_job_group(JOB_ID)
+        assert mock_get_request.call_count == 1
+
+    @patch(
+        "airflow.providers.google.cloud.hooks.dataprep.requests.get",
+        side_effect=[
+            HTTPError(),
+            HTTPError(),
+            HTTPError(),
+            HTTPError(),
+            mock.MagicMock(),
+        ],
+    )
+    def test_get_job_group_should_retry_after_four_errors(self, mock_get_request, mock_hook):
+        mock_hook.get_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
+        mock_hook.get_job_group(JOB_ID)
+        assert mock_get_request.call_count == 5
+
+    @patch(
+        "airflow.providers.google.cloud.hooks.dataprep.requests.get",
+        side_effect=[HTTPError(), HTTPError(), HTTPError(), HTTPError(), HTTPError()],
+    )
+    def test_get_job_group_raise_error_after_five_calls(self, mock_get_request, mock_hook):
+        with pytest.raises(RetryError) as err:
+            mock_hook.get_job_group.retry.sleep = mock.Mock()  # pylint: disable=no-member
+            mock_hook.get_job_group(JOB_ID)
         assert "HTTPError" in str(err)
         assert mock_get_request.call_count == 5

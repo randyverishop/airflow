@@ -17,7 +17,9 @@
 # under the License.
 from unittest import TestCase, mock
 
-from airflow.providers.google.cloud.operators.dataprep import DataprepGetJobsForJobGroupOperator
+from airflow.providers.google.cloud.operators.dataprep import (
+    DataprepGetJobGroupOperator, DataprepGetJobsForJobGroupOperator,
+)
 
 JOB_ID = 143
 TASK_ID = "dataprep_job"
@@ -32,3 +34,14 @@ class TestDataprepGetJobsForJobGroupOperator(TestCase):
         op.execute(context={})
         hook_mock.assert_called_once_with(dataprep_conn_id='dataprep_conn_id')
         hook_mock.return_value.get_jobs_for_job_group.assert_called_once_with(job_id=JOB_ID)
+
+
+class TestDataprepGetJobGroupOperator(TestCase):
+    @mock.patch(
+        "airflow.providers.google.cloud.operators.dataprep.GoogleDataprepHook"
+    )
+    def test_execute(self, hook_mock):
+        op = DataprepGetJobGroupOperator(job_id=JOB_ID, task_id=TASK_ID)
+        op.execute(context={})
+        hook_mock.assert_called_once_with(dataprep_conn_id='dataprep_conn_id')
+        hook_mock.return_value.get_job_group.assert_called_once_with(job_id=JOB_ID)

@@ -35,7 +35,6 @@ class DataprepGetJobsForJobGroupOperator(BaseOperator):
         For more information on how to use this operator, take a look at the guide:
         :ref:`howto/operator:DataprepGetJobsForJobGroupOperator`
 
-
     :param job_id The ID of the job that will be requests
     :type job_id: int
     """
@@ -53,4 +52,34 @@ class DataprepGetJobsForJobGroupOperator(BaseOperator):
         self.log.info("Fetching data for job with id: %d ...", self.job_id)
         hook = GoogleDataprepHook(dataprep_conn_id="dataprep_conn_id")
         response = hook.get_jobs_for_job_group(job_id=self.job_id)
+        return response
+
+
+class DataprepGetJobGroupOperator(BaseOperator):
+    """
+    Get the specified jobGroup.
+    A job group is a job that is executed from a specific node in a flow.
+    API documentation https://clouddataprep.com/documentation/api#section/Overview
+
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:DataprepGetJobGroupOperator`
+
+    :param job_id The ID of the job that will be requests
+    :type job_id: int
+    """
+
+    template_fields = ("job_id",)
+
+    @apply_defaults
+    def __init__(
+        self, *, job_id: int, **kwargs
+    ) -> None:
+        super().__init__(**kwargs)
+        self.job_id = job_id
+
+    def execute(self, context: Dict):
+        self.log.info("Fetching data for job with id: %d ...", self.job_id)
+        hook = GoogleDataprepHook(dataprep_conn_id="dataprep_conn_id")
+        response = hook.get_job_group(job_id=self.job_id)
         return response

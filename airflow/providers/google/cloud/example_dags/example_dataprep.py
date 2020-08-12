@@ -19,19 +19,27 @@ Example Airflow DAG that shows how to use Google Dataprep.
 """
 
 from airflow import models
-from airflow.providers.google.cloud.operators.dataprep import DataprepGetJobsForJobGroupOperator
+from airflow.providers.google.cloud.operators.dataprep import (
+    DataprepGetJobGroupOperator, DataprepGetJobsForJobGroupOperator,
+)
 from airflow.utils import dates
 
 JOB_ID = 6269792
+
 
 with models.DAG(
     "example_dataprep",
     schedule_interval=None,  # Override to match your needs
     start_date=dates.days_ago(1)
 ) as dag:
-
     # [START how_to_dataprep_get_jobs_for_job_group_operator]
     get_jobs_for_job_group = DataprepGetJobsForJobGroupOperator(
         task_id="get_jobs_for_job_group", job_id=JOB_ID
     )
     # [END how_to_dataprep_get_jobs_for_job_group_operator]
+
+    # [START how_to_dataprep_get_job_group_operator]
+    get_job_group = DataprepGetJobGroupOperator(
+        task_id="get_job_group", job_id=JOB_ID
+    )
+    # [END how_to_dataprep_get_job_group_operator]

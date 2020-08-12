@@ -73,3 +73,17 @@ class GoogleDataprepHook(BaseHook):
         response = requests.get(url, headers=self._headers)
         response.raise_for_status()
         return response.json()
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, max=10))
+    def get_job_group(self, job_id: int):
+        """
+        Get the specified jobGroup.
+        A job group is a job that is executed from a specific node in a flow.
+
+        :param job_id The ID of the job that will be fetched.
+        :type job_id: int
+        """
+        url: str = f"{self._url}/{job_id}"
+        response = requests.get(url, headers=self._headers)
+        response.raise_for_status()
+        return response.json()
