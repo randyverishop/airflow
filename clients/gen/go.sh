@@ -55,22 +55,6 @@ OUTPUT_DIR="${OUTPUT_DIR}" \
     --git-repo-id airflow-client-go/airflow \
     --additional-properties "${go_config[*]}"
 
-# patch generated client to support problem HTTP API
-# this patch can be removed after following upstream patch gets merged:
-# https://github.com/OpenAPITools/openapi-generator/pull/6793
-cd "${OUTPUT_DIR}" && patch -b <<'EOF'
---- client.go
-+++ client.go
-@@ -37,7 +37,7 @@ import (
- )
-
- var (
--	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?json)`)
-+	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?(?:problem\+)?json)`)
-	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
- )
-EOF
-
 pushd "${OUTPUT_DIR}"
     # prepend license headers
     pre-commit run --all-files || true
