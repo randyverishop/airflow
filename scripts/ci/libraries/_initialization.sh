@@ -105,9 +105,8 @@ function initialization::initialize_base_variables() {
 # Determine current branch
 function initialization::initialize_branch_variables() {
     # Default branch used - this will be different in different branches
-    export DEFAULT_BRANCH=${DEFAULT_BRANCH="master"}
-    export DEFAULT_CONSTRAINTS_BRANCH=${DEFAULT_CONSTRAINTS_BRANCH="constraints-master"}
-    readonly DEFAULT_BRANCH
+    export DEFAULT_BRANCH="master"
+    export DEFAULT_CONSTRAINTS_BRANCH="constraints-master"
     readonly DEFAULT_CONSTRAINTS_BRANCH
 
     # Default branch name for triggered builds is the one configured in default branch
