@@ -2012,6 +2012,16 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --load-default-connections
           Include Airflow Default Connections.
 
+  --skip-example-dags
+          Airflow example dags will not be included.
+
+  --skip-default-connections
+          Airflow Default Connections will not be created.
+
+  -T, --skip-tutorial-objects
+          Default Connections and sample dags will not be created. Use this to have a clean
+          Airflow without tutorial objects.
+
   ****************************************************************************************************
    Kind kubernetes and Kubernetes tests configuration(optional)
 
