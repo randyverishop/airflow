@@ -74,7 +74,7 @@ class TriggerRuleDep(BaseTIDep):
             ti=ti,
             finished_tasks=dep_context.finished_tasks)
 
-        yield from self._evaluate_trigger_rule(
+        for dep_status in self._evaluate_trigger_rule(
             ti=ti,
             successes=successes,
             skipped=skipped,
@@ -82,7 +82,9 @@ class TriggerRuleDep(BaseTIDep):
             upstream_failed=upstream_failed,
             done=done,
             flag_upstream_failed=dep_context.flag_upstream_failed,
-            session=session)
+            session=session
+        ):
+            yield dep_status
 
     @provide_session
     def _evaluate_trigger_rule(
