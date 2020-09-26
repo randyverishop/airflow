@@ -320,10 +320,13 @@ function initialization::initialize_image_build_variables() {
     export ADDITIONAL_RUNTIME_DEPS="${ADDITIONAL_RUNTIME_DEPS:=""}"
     # whether pre cached pip packages are used during build
     export AIRFLOW_PRE_CACHED_PIP_PACKAGES="${AIRFLOW_PRE_CACHED_PIP_PACKAGES:="true"}"
+<<<<<<< HEAD
     # by default install mysql client
     export INSTALL_MYSQL_CLIENT=${INSTALL_MYSQL_CLIENT:="true"}
     # additional tag for the image
     export IMAGE_TAG=${IMAGE_TAG:=""}
+=======
+>>>>>>> Disables PIP cache from GitHub during the build (#201)
 }
 
 # Determine version suffixes used to build backport packages

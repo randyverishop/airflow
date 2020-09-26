@@ -1244,10 +1244,13 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --disable-pip-cache
           Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
 
+<<<<<<< HEAD
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
           image in controlled environment. Only valid for production image.
 
+=======
+>>>>>>> Disables PIP cache from GitHub during the build (#201)
   -C, --force-clean-images
           Force build images with cache disabled. This will remove the pulled or build images
           and start building images from scratch. This might take a long time.
@@ -1716,10 +1719,13 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --disable-pip-cache
           Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
 
+<<<<<<< HEAD
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
           image in controlled environment. Only valid for production image.
 
+=======
+>>>>>>> Disables PIP cache from GitHub during the build (#201)
   -C, --force-clean-images
           Force build images with cache disabled. This will remove the pulled or build images
           and start building images from scratch. This might take a long time.
