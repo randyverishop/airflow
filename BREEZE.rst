@@ -566,8 +566,8 @@ This install additional pypi dependency - torchio in specified version.
 
 .. code-block:: bash
 
-     ./breeze build-image --production-image --additional-dev-deps "libasound2-dev" \
-        --additional-runtime-deps "libasound2"
+     ./breeze build-image --production-image --additional-dev-apt-deps "libasound2-dev" \
+        --additional-runtime-apt-deps "libasound2"
 
 This install additional apt dependencies - ``libasound2-dev`` in build image and ``libasound`` in the
 final image. Those are development dependencies that might be needed to build and use python packages added
@@ -580,7 +580,7 @@ suffix and they need to also be paired with corresponding runtime dependency add
 .. code-block:: bash
 
      ./breeze build-image --production-image --python 3.7 --additional-dev-deps "libasound2-dev" \
-        --additional-runtime-deps "libasound2"
+        --additional-runtime-apt-deps "libasound2"
 
 Same as above but uses python 3.7.
 
@@ -1216,6 +1216,8 @@ This is the current syntax for  `./breeze <./breeze>`_:
           images are pulled by default only for the first time you run the
           environment, later the locally build images are used as cache.
 
+  Customization options:
+
   -E, --extras EXTRAS
           Extras to pass to build images The default are different for CI and production images:
 
@@ -1229,20 +1231,49 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --image-tag TAG
           Additional tag in the image.
 
-  --additional-extras ADDITIONAL_EXTRAS
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --additional-extras
           Additional extras to pass to build images The default is no additional extras.
 
   --additional-python-deps ADDITIONAL_PYTHON_DEPS
           Additional python dependencies to use when building the images.
 
-  --additional-dev-deps ADDITIONAL_DEV_DEPS
+  --dev-apt-command
+          The basic command executed before dev apt deps are installed.
+
+  --additional-dev-apt-command
+          Additional command executed before dev apt deps are installed.
+
+  --additional-dev-apt-deps
           Additional apt dev dependencies to use when building the images.
 
-  --additional-runtime-deps ADDITIONAL_RUNTIME_DEPS
+  --dev-apt-deps
+          The basic apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-deps
+          Additional apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-envs
+          Additional environment variables set when adding dev dependencies.
+
+  --runtime-apt-command
+          The basic command executed before runtime apt deps are installed.
+
+  --additional-runtime-apt-command
+          Additional command executed before runtime apt deps are installed.
+
+  --runtime-apt-deps
+          The basic apt runtime dependencies to use when building the images.
+
+  --additional-runtime-apt-deps
           Additional apt runtime dependencies to use when building the images.
 
-  --disable-pip-cache
-          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+  --additional-runtime-apt-envs
+          Additional environment variables set when adding runtime dependencies.
+
+  Build options:
 
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
@@ -1688,7 +1719,13 @@ This is the current syntax for  `./breeze <./breeze>`_:
           images are pulled by default only for the first time you run the
           environment, later the locally build images are used as cache.
 
+<<<<<<< HEAD
   -E, --extras EXTRAS
+=======
+  Customization options:
+
+  -E, --extras
+>>>>>>> Allows more customizations for image building. (#202)
           Extras to pass to build images The default are different for CI and production images:
 
           CI image:
@@ -1698,23 +1735,63 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,
                  ssh,statsd,virtualenv
 
+<<<<<<< HEAD
   --image-tag TAG
           Additional tag in the image.
 
   --additional-extras ADDITIONAL_EXTRAS
+=======
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --additional-extras
+>>>>>>> Allows more customizations for image building. (#202)
           Additional extras to pass to build images The default is no additional extras.
 
   --additional-python-deps ADDITIONAL_PYTHON_DEPS
           Additional python dependencies to use when building the images.
 
+<<<<<<< HEAD
   --additional-dev-deps ADDITIONAL_DEV_DEPS
           Additional apt dev dependencies to use when building the images.
 
   --additional-runtime-deps ADDITIONAL_RUNTIME_DEPS
+=======
+  --dev-apt-command
+          The basic command executed before dev apt deps are installed.
+
+  --additional-dev-apt-command
+          Additional command executed before dev apt deps are installed.
+
+  --additional-dev-apt-deps
+          Additional apt dev dependencies to use when building the images.
+
+  --dev-apt-deps
+          The basic apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-deps
+          Additional apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-envs
+          Additional environment variables set when adding dev dependencies.
+
+  --runtime-apt-command
+          The basic command executed before runtime apt deps are installed.
+
+  --additional-runtime-apt-command
+          Additional command executed before runtime apt deps are installed.
+
+  --runtime-apt-deps
+          The basic apt runtime dependencies to use when building the images.
+
+  --additional-runtime-apt-deps
+>>>>>>> Allows more customizations for image building. (#202)
           Additional apt runtime dependencies to use when building the images.
 
-  --disable-pip-cache
-          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+  --additional-runtime-apt-envs
+          Additional environment variables set when adding runtime dependencies.
+
+  Build options:
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2121,7 +2198,13 @@ This is the current syntax for  `./breeze <./breeze>`_:
           images are pulled by default only for the first time you run the
           environment, later the locally build images are used as cache.
 
+<<<<<<< HEAD
   -E, --extras EXTRAS
+=======
+  Customization options:
+
+  -E, --extras
+>>>>>>> Allows more customizations for image building. (#202)
           Extras to pass to build images The default are different for CI and production images:
 
           CI image:
@@ -2131,23 +2214,63 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,
                  ssh,statsd,virtualenv
 
+<<<<<<< HEAD
   --image-tag TAG
           Additional tag in the image.
 
   --additional-extras ADDITIONAL_EXTRAS
+=======
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --additional-extras
+>>>>>>> Allows more customizations for image building. (#202)
           Additional extras to pass to build images The default is no additional extras.
 
   --additional-python-deps ADDITIONAL_PYTHON_DEPS
           Additional python dependencies to use when building the images.
 
+<<<<<<< HEAD
   --additional-dev-deps ADDITIONAL_DEV_DEPS
           Additional apt dev dependencies to use when building the images.
 
   --additional-runtime-deps ADDITIONAL_RUNTIME_DEPS
+=======
+  --dev-apt-command
+          The basic command executed before dev apt deps are installed.
+
+  --additional-dev-apt-command
+          Additional command executed before dev apt deps are installed.
+
+  --additional-dev-apt-deps
+          Additional apt dev dependencies to use when building the images.
+
+  --dev-apt-deps
+          The basic apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-deps
+          Additional apt dev dependencies to use when building the images.
+
+  --additional-dev-apt-envs
+          Additional environment variables set when adding dev dependencies.
+
+  --runtime-apt-command
+          The basic command executed before runtime apt deps are installed.
+
+  --additional-runtime-apt-command
+          Additional command executed before runtime apt deps are installed.
+
+  --runtime-apt-deps
+          The basic apt runtime dependencies to use when building the images.
+
+  --additional-runtime-apt-deps
+>>>>>>> Allows more customizations for image building. (#202)
           Additional apt runtime dependencies to use when building the images.
 
-  --disable-pip-cache
-          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+  --additional-runtime-apt-envs
+          Additional environment variables set when adding runtime dependencies.
+
+  Build options:
 
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
