@@ -1228,12 +1228,15 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,
                  ssh,statsd,virtualenv
 
+<<<<<<< HEAD
   --image-tag TAG
           Additional tag in the image.
 
   --disable-pip-cache
           Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
 
+=======
+>>>>>>> Constraints and PIP packages can be installed from local sources (#204)
   --additional-extras
           Additional extras to pass to build images The default is no additional extras.
 
@@ -1278,6 +1281,19 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
           image in controlled environment. Only valid for production image.
+
+  --constraints-location
+          Url to the constraints file. In case of the production image it can also be a path to the
+          constraint file placed in 'docker-context-files' folder, in which case it has to be
+          in the form of '/docker-context-files/<NAME_OF_THE_FILE>'
+
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --install-local-pip-wheels
+          This flag is only used in production image building. If it is used then instead of
+          installing Airflow from PyPI, the packages are installed from the .whl packages placed
+          in the 'docker-context-files' folder. It implies '--disable-pip-cache'
 
   -C, --force-clean-images
           Force build images with cache disabled. This will remove the pulled or build images
@@ -1719,13 +1735,9 @@ This is the current syntax for  `./breeze <./breeze>`_:
           images are pulled by default only for the first time you run the
           environment, later the locally build images are used as cache.
 
-<<<<<<< HEAD
-  -E, --extras EXTRAS
-=======
   Customization options:
 
-  -E, --extras
->>>>>>> Allows more customizations for image building. (#202)
+  -E, --extras EXTRAS
           Extras to pass to build images The default are different for CI and production images:
 
           CI image:
@@ -1735,28 +1747,15 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,
                  ssh,statsd,virtualenv
 
-<<<<<<< HEAD
-  --image-tag TAG
+                 --image-tag TAG
           Additional tag in the image.
 
   --additional-extras ADDITIONAL_EXTRAS
-=======
-  --disable-pip-cache
-          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
-
-  --additional-extras
->>>>>>> Allows more customizations for image building. (#202)
           Additional extras to pass to build images The default is no additional extras.
 
   --additional-python-deps ADDITIONAL_PYTHON_DEPS
           Additional python dependencies to use when building the images.
 
-<<<<<<< HEAD
-  --additional-dev-deps ADDITIONAL_DEV_DEPS
-          Additional apt dev dependencies to use when building the images.
-
-  --additional-runtime-deps ADDITIONAL_RUNTIME_DEPS
-=======
   --dev-apt-command
           The basic command executed before dev apt deps are installed.
 
@@ -1785,7 +1784,6 @@ This is the current syntax for  `./breeze <./breeze>`_:
           The basic apt runtime dependencies to use when building the images.
 
   --additional-runtime-apt-deps
->>>>>>> Allows more customizations for image building. (#202)
           Additional apt runtime dependencies to use when building the images.
 
   --additional-runtime-apt-envs
@@ -1793,19 +1791,23 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
   Build options:
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Conditional MySQL Client installation (#203)
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
           image in controlled environment. Only valid for production image.
 
-<<<<<<< HEAD
-=======
->>>>>>> Disables PIP cache from GitHub during the build (#201)
-=======
->>>>>>> Conditional MySQL Client installation (#203)
+  --constraints-location
+          Url to the constraints file. In case of the production image it can also be a path to the
+          constraint file placed in 'docker-context-files' folder, in which case it has to be
+          in the form of '/docker-context-files/<NAME_OF_THE_FILE>'
+
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --install-local-pip-wheels
+          This flag is only used in production image building. If it is used then instead of
+          installing Airflow from PyPI, the packages are installed from the .whl packages placed
+          in the 'docker-context-files' folder. It implies '--disable-pip-cache'
+
   -C, --force-clean-images
           Force build images with cache disabled. This will remove the pulled or build images
           and start building images from scratch. This might take a long time.
@@ -2215,6 +2217,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  ssh,statsd,virtualenv
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   --image-tag TAG
           Additional tag in the image.
 
@@ -2223,6 +2226,8 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --disable-pip-cache
           Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
 
+=======
+>>>>>>> Constraints and PIP packages can be installed from local sources (#204)
   --additional-extras
 >>>>>>> Allows more customizations for image building. (#202)
           Additional extras to pass to build images The default is no additional extras.
@@ -2275,6 +2280,19 @@ This is the current syntax for  `./breeze <./breeze>`_:
   --disable-mysql-client-installation
           Disables installation of the mysql client which might be problematic if you are building
           image in controlled environment. Only valid for production image.
+
+  --constraints-location
+          Url to the constraints file. In case of the production image it can also be a path to the
+          constraint file placed in 'docker-context-files' folder, in which case it has to be
+          in the form of '/docker-context-files/<NAME_OF_THE_FILE>'
+
+  --disable-pip-cache
+          Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
+
+  --install-local-pip-wheels
+          This flag is only used in production image building. If it is used then instead of
+          installing Airflow from PyPI, the packages are installed from the .whl packages placed
+          in the 'docker-context-files' folder. It implies '--disable-pip-cache'
 
   -C, --force-clean-images
           Force build images with cache disabled. This will remove the pulled or build images

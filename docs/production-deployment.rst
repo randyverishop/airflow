@@ -1,4 +1,4 @@
- .. Licensed to the Apache Software Foundation (ASF) under one
+  .. Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
     regarding copyright ownership.  The ASF licenses this file
@@ -14,6 +14,8 @@
     KIND, either express or implied.  See the License for the
     specific language governing permissions and limitations
     under the License.
+
+
 
 Production Deployment
 ^^^^^^^^^^^^^^^^^^^^^
@@ -154,11 +156,75 @@ the same image can be built using ``breeze`` (it supports auto-completion of the
       --additional-extras=jdbc --additional-python-deps="pandas" \
       --additional-dev-apt-deps="gcc g++" --additional-runtime-apt-deps="default-jre-headless"
 
+Joining both - Customizing & extending the image
+................................................
 
-You can customize more aspects of the image - such as additional commands executed before apt dependencies
+You can combine both - customizing & extending the image. You can build the image first using
+``customize`` method (either with docker command or with ``breeze`` and then you can ``extend``
+the resulting image using ``FROM:`` any dependencies you want.
+
+
+External dependencies in corporate environments
+-----------------------------------------------
+
+In corporate environments, there is often the need to build your Container images using
+fully controlled sources of dependencies. The docker file uses standard sources such as
+Debian apt repositories or PyPI repository, also few other sources such as NodeJS apt repository,
+Yarn package repository, MySQL installation repository.
+
+However, in corporate environments, the dependencies are often only possible to be installed from
+internal, vetted repositories that are reviewed and approved by the internal security teams.
+In those cases, you might need to switch to those different sources.
+
+This is rather easy if you extend the image - you simply write your extension commands
+using the right sources - either by adding/replacing the sources in apt configuration or
+specifying the source repository in pip install command. But still you would have to rely on
+the original image binaries and this is often non-go for security teams.
+
+Therefore the Airflow Dockerfile is prepared to be fully buildable with customisation options, without
+the need of modifying the Dockerfile but by providing appropriate build arguments.
+
+It's a bit more involved and requires deeper knowledge of the image internals. However with the customisation
+options described below, it is possible to build the image following the security practices required
+in those environments.
+
+
+Available image customisations
+------------------------------
+
+Installing NodeJS and Yarn
+--------------------------
+
+The Airflow image requires NodeJS and Yarn to be installed so that the web UI can be transpiled, dependent
+packages installed and the production-ready, optimised packages can be prepared. In order to do that, the
+Docker image building process installs both Node JS and Yarn. Those packages are only installed in the
+build image - they are not installed in the final, resulting image. The default installation method requires
+to add NodeJS 10 and stable Yarn apt sources and follow the practices described in the installation manuals
+for those packages `NodeJS installation <https://github.com/nodesource/distributions/blob/master/README.md>`_
+and `Yarn installation <https://classic.yarnpkg.com/en/docs/install/#debian-stable>`_ . However if you
+have your own sources for those package you can replace the default installation method via providing
+``DEV_APT_COMMAND`` build argument.
+
+Current ``DEV_APT_COMMAND``:
+
+.. code-block:: bash
+
+   curl --fail --location https://deb.nodesource.com/setup_10.x | bash - \
+      && curl https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - > /dev/null \
+      && echo 'deb https://dl.yarnpkg.com/debian/ stable main' > /etc/apt/sources.list.d/yarn.list
+
+
+Additional commands and packages during image building
+------------------------------------------------------
+
+When you customise your image you might need additional packages or packages sources to install your own
+dependencies. This can be achieved by providing ``ADDITIONAL`` build args when you build the
+image. You can see all the parameters described later in the reference.
+
+You can customize many aspects of the image - such as additional commands executed before apt dependencies
 are installed, or adding extra sources to install your dependencies from. You can see all the arguments
 described below but here is an example of rather complex command to customise the image
-based on example in `this comment<https://github.com/apache/airflow/issues/8605#issuecomment-690065621>`_:
+based on example in `this comment <https://github.com/apache/airflow/issues/8605#issuecomment-690065621>`_:
 
 .. code-block:: bash
 
@@ -189,32 +255,51 @@ based on example in `this comment<https://github.com/apache/airflow/issues/8605#
     --build-arg ADDITIONAL_RUNTIME_ENV_VARS="ACCEPT_EULA=Y" \
     --tag my-image
 
+Adding custom scripts for installation
+......................................
 
-Customizing & extending the image together
-..........................................
+You can not only add commands and packages but you can use custom scripts. All the scripts
+that you add to the ``scripts/docker`` directory are  automatically copied to the
+``./scripts/docker`` folder in both build and main image and you are  able to use those scripts
+in your custom ``ADDITIONAL_DEV_APT_COMMAND`` for the build image and ``ADDITIONAL_RUNTIME_APT_COMMAND``
+in the main image. Do not forget to set their mode as executable.
 
-You can combine both - customizing & extending the image. You can build the image first using
-``customize`` method (either with docker command or with ``breeze`` and then you can ``extend``
-the resulting image using ``FROM`` any dependencies you want.
+All those scripts are .gitignored by default so you will not accidentally commit them to the
+repository. If you have automated scripts to build your own custom images you should simply copy the
+files you want to use to the ``scripts/docker`` folder before the build step.
 
-External sources for dependencies
----------------------------------
+Adding files to the Docker Context
+..................................
 
-In corporate environments, there is often the need to build your Container images using
-other than default sources of dependencies. The docker file uses standard sources (such as
-Debian apt repositories or PyPI repository. However, in corporate environments, the dependencies
-are often only possible to be installed from internal, vetted repositories that are reviewed and
-approved by the internal security teams. In those cases, you might need to use those different
-sources.
+If you want to add some files to your docker image, they have to be found in Docker context. In Airflow
+we are using "exclude-by-default" policy in order to minimise size of the context to send to the Docker
+engine when you build the image. Only files and folder that are specifically added to ``.dockerignore``
+with !prefix are added to the context.
 
-This is rather easy if you extend the image - you simply write your extension commands
-using the right sources - either by adding/replacing the sources in apt configuration or
-specifying the source repository in pip install command.
+If wish to add any files to context without modifying the ``.dockerignore`` and adding them, place the files
+in the ``docker-context-files`` directory. They will be copied to ``/docker-context-files`` in your docker
+image. This copying is done before PIP installation so that for example AIRFLOW_CONSTRAINTS_LOCATION can be
+overwritten pointing to that folder. Also when ``AIRFLOW_LOCAL_PIP_WHEELS`` is set to true, the wheels from
+``docker-context-files`` are used to perform the ``pip install`` step.
 
-It's a bit more involved in the case of customizing the image. We do not have yet (but we are working
-on it) a capability of changing the sources via build args. However, since the builds use
-Dockerfile that is a source file, you can rather easily simply modify the file manually and
-specify different sources to be used by either of the commands.
+The wheel files to install might be prepared by an earlier ``pip download`` command or copied from
+any repository of the wheel files that is appropriate for your setup.
+
+Example ``pip download`` command:
+
+.. code-block:: bash
+
+  pip download --dest docker-context-files \
+    --constraint docker-context-files/constraints-1-10.txt  \
+    apache-airflow[async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,ssh,statsd,virtualenv]==1.10.12
+
+If you have automated scripts to build your own custom images you should simply copy the
+files you want to use to the ``docker-context-files`` folder before the build step.
+
+If you want to add your files to the "main" image, you should rather combine customising and extending
+the image. First you should build the customised Airflow image and then you should extend it using ``FROM``
+directive and add those files you want to add. This is best approach if you would like to have an image
+that is optimized for size.
 
 
 Comparing extending and customizing the image
@@ -293,6 +378,7 @@ The PROD image entrypoint works as follows:
   > docker run -it apache/airflow:master-python3.6
   2.0.0.dev0
 
+
 Production image build arguments
 --------------------------------
 
@@ -322,8 +408,13 @@ The following build arguments (``--build-arg`` in docker build command) can be u
 |                                          |                                          | or it could point to specific version    |
 |                                          |                                          | for example ``constraints-1.10.12``      |
 +------------------------------------------+------------------------------------------+------------------------------------------+
-| ``AIRFLOW_EXTRAS``                       | (see Dockerfile)                         | Default extras with which airflow is     |
-|                                          |                                          | installed                                |
+| ``AIRFLOW_CONSTRAINTS_LOCATION``         |                                          | If not empty, it will override the       |
+|                                          |                                          | source of the constraints with the       |
+|                                          |                                          | specified URL or file. Note that the     |
+|                                          |                                          | file has to be in docker context so      |
+|                                          |                                          | it's best to place such file in          |
+|                                          |                                          | one of the folders included in           |
+|                                          |                                          | dockerignore                             |
 +------------------------------------------+------------------------------------------+------------------------------------------+
 | ``AIRFLOW_PRE_CACHED_PIP_PACKAGES``      | ``true``                                 | Allows to pre-cache airflow PIP packages |
 |                                          |                                          | from the GitHub of Apache Airflow        |
@@ -332,6 +423,16 @@ The following build arguments (``--build-arg`` in docker build command) can be u
 |                                          |                                          | But in some corporate environments it    |
 |                                          |                                          | might be forbidden to download anything  |
 |                                          |                                          | from public repositories.                |
++------------------------------------------+------------------------------------------+------------------------------------------+
+| ``AIRFLOW_LOCAL_PIP_WHEELS``             | ``false``                                | If set to true, Airflow and it's         |
+|                                          |                                          | dependencies are installed from locally  |
+|                                          |                                          | downloaded .whl files placed in the      |
+|                                          |                                          | ``docker-context-files``. Implies        |
+|                                          |                                          | ``AIRFLOW_PRE_CACHED_PIP_PACKAGES``      |
+|                                          |                                          | to be false.                             |
++------------------------------------------+------------------------------------------+------------------------------------------+
+| ``AIRFLOW_EXTRAS``                       | (see Dockerfile)                         | Default extras with which airflow is     |
+|                                          |                                          | installed                                |
 +------------------------------------------+------------------------------------------+------------------------------------------+
 | ``ADDITIONAL_AIRFLOW_EXTRAS``            |                                          | Optional additional extras with which    |
 |                                          |                                          | airflow is installed                     |
@@ -400,57 +501,27 @@ production image. There are three types of build:
 * You can build the image from released PyPi airflow package (used to build the official Docker image)
 * You can build the image from any version in GitHub repository(this is used mostly for system testing).
 
-+-----------------------------------+-----------------------------------+
-| Build argument                    | What to specify                   |
-+===================================+===================================+
-| ``AIRFLOW_INSTALL_SOURCES``       | Should point to the sources of    |
-|                                   | of Apache Airflow. It can be      |
-|                                   | either "." for installation from  |
-|                                   | local sources, "apache-airflow"   |
-|                                   | for installation from packages    |
-|                                   | and URL to installation from      |
-|                                   | GitHub repository (see below)     |
-|                                   | to install from any GitHub        |
-|                                   | version                           |
-+-----------------------------------+-----------------------------------+
-| ``AIRFLOW_INSTALL_VERSION``       | Optional - might be used for      |
-|                                   | package installation case to      |
-|                                   | set Airflow version for example   |
-|                                   | "==1.10.12"                       |
-+-----------------------------------+-----------------------------------+
-| ``AIRFLOW_CONSTRAINTS_REFERENCE`` | reference (branch or tag) from    |
-|                                   | GitHub where constraints file     |
-|                                   | is taken from. By default it is   |
-|                                   | ``constraints-master`` but can be |
-|                                   | ``constraints-1-10`` for 1.10.*   |
-|                                   | constraint or if you want to      |
-|                                   | point to specific version         |
-|                                   | might be ``constraints-1.10.12``  |
-+-----------------------------------+-----------------------------------+
-| ``SLUGIFY_USES_TEXT_UNIDECODE``   | In case of of installing airflow  |
-|                                   | 1.10.2 or 1.10.1 you need to      |
-|                                   | set this arg to ``yes``.          |
-+-----------------------------------+-----------------------------------+
-| ``AIRFLOW_WWW``                   | In case of Airflow 2.0 it should  |
-|                                   | be "www", in case of Airflow 1.10 |
-|                                   | series it should be "www_rbac".   |
-|                                   | See examples below                |
-+-----------------------------------+-----------------------------------+
-| ``AIRFLOW_SOURCES_FROM``          | Sources of Airflow. Set it to     |
-|                                   | "empty" to avoid costly           |
-|                                   | Docker context copying            |
-|                                   | in case of installation from      |
-|                                   | the package or from GitHub URL.   |
-|                                   | See examples below                |
-+-----------------------------------+-----------------------------------+
-| ``AIRFLOW_SOURCES_TO``            | Target for Airflow sources. Set   |
-|                                   | to "/empty" to avoid costly       |
-|                                   | Docker context copying            |
-|                                   | in case of installation from      |
-|                                   | the package or from GitHub URL.   |
-|                                   | See examples below                |
-+-----------------------------------+-----------------------------------+
-
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| Build argument                    | What to specify                                                                                                                |
++===================================+================================================================================================================================+
+| ``AIRFLOW_INSTALL_SOURCES``       | Should point to the sources of Apache Airflow. It can be either "." for installation from local sources, "apache-airflow" for  |
+|                                   | installation from packages and URL to installation from GitHub repository (see below) to install from any GitHub version       |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``AIRFLOW_INSTALL_VERSION``       | Optional - might be used for package installation case to set Airflow version for example "==1.10.12"                          |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``AIRFLOW_CONSTRAINTS_REFERENCE`` | Reference (branch or tag) from GitHub where constraints file is taken from. By default it is ``constraints-master`` but can be |
+|                                   | ``constraints-1-10`` for 1.10.* constraint or if you want to point to specific version, might be ``constraints-1.10.12``       |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``SLUGIFY_USES_TEXT_UNIDECODE``   | In case of installing airflow 1.10.2 or 1.10.1 you need to set this arg to ``yes``.                                            |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``AIRFLOW_WWW``                   | In case of Airflow 2.0 it should be "www", in case of Airflow 1.10 series it should be "www_rbac". See examples below.         |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``AIRFLOW_SOURCES_FROM``          | Sources of Airflow. Set it to "empty" to avoid costly Docker context copying in case of installation from the package or from  |
+|                                   | GitHub URL. See examples below.                                                                                                |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+| ``AIRFLOW_SOURCES_TO``            | Target for Airflow sources. Set to "/empty" to avoid costly Docker context copying  in case of installation from the package   |
+|                                   | or from GitHub URL. See examples below.                                                                                        |
++-----------------------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
 This builds production image in version 3.6 with default extras from the local sources (master version
 of 2.0 currently):
@@ -522,6 +593,44 @@ additional apt dev and runtime dependencies.
     --build-arg ADDITIONAL_AIRFLOW_EXTRAS="jdbc"
     --build-arg ADDITIONAL_DEV_APT_DEPS="gcc g++"
     --build-arg ADDITIONAL_RUNTIME_APT_DEPS="default-jre-headless"
+
+This builds the production image in version 3.7 with packages and constraints used from the local
+``docker-context-files`` rather than installed from PyPI or GitHub. It also disables MySQL client
+installation as it is using external installation method.
+
+Note that as a prerequisite - you need to have downloaded wheel files. In the example below we
+first download such constraint file locally and then use ``pip download`` to get the .whl files needed
+but in most likely scenario, those wheel files should be copied from an internal repository of such .whl
+files. Note that ``AIRFLOW_INSTALL_VERSION`` is only there for reference, the apache airflow .whl file
+in the right version is part of the .whl files downloaded.
+
+Note that 'pip download' will only works on linux host as some of the packages need to be compiled from
+sources and you cannot install them providing ``--platform`` switch. They also need to be downloaded using
+the same python version as the target image.
+
+.. code-block:: bash
+
+  rm docker-context-files/*.whl docker-context-files/*.txt
+
+  curl -Lo "docker-context-files/constraints-1-10.txt" \
+    https://raw.githubusercontent.com/apache/airflow/constraints-1-10/constraints-3.7.txt
+
+  pip download --dest docker-context-files \
+    --constraint docker-context-files/constraints-1-10.txt  \
+    apache-airflow[async,aws,azure,celery,dask,elasticsearch,gcp,kubernetes,mysql,postgres,redis,slack,ssh,statsd,virtualenv]==1.10.12
+
+  docker build . \
+    --build-arg PYTHON_BASE_IMAGE="python:3.7-slim-buster" \
+    --build-arg PYTHON_MAJOR_MINOR_VERSION=3.7 \
+    --build-arg AIRFLOW_INSTALL_SOURCES="apache-airflow" \
+    --build-arg AIRFLOW_INSTALL_VERSION="==1.10.12" \
+    --build-arg AIRFLOW_CONSTRAINTS_REFERENCE="constraints-1-10" \
+    --build-arg AIRFLOW_SOURCES_FROM="empty" \
+    --build-arg AIRFLOW_SOURCES_TO="/empty" \
+    --build-arg INSTALL_MYSQL_CLIENT="false" \
+    --build-arg AIRFLOW_PRE_CACHED_PIP_PACKAGES="false" \
+    --build-arg AIRFLOW_LOCAL_PIP_WHEELS="true" \
+    --build-arg AIRFLOW_CONSTRAINTS_LOCATION="/docker-context-files/constraints-1-10.txt
 
 
 More details about the images

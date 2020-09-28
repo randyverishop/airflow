@@ -134,7 +134,7 @@ K: V:
 l a: t: d:
 v y n q f
 F P I E: C r
-L U X B
+L U X
 D: R: c g: s:
 S: N:
 T
@@ -151,10 +151,10 @@ build-cache-local build-cache-pulled build-cache-disabled disable-pip-cache
 dockerhub-user: dockerhub-repo: github-registry github-repository: github-image-id:
 postgres-version: mysql-version:
 version-suffix-for-pypi: version-suffix-for-svn:
-disable-mysql-client-installation
 additional-extras: additional-python-deps:
 dev-apt-deps: additional-dev-apt-deps: dev-apt-command: additional-dev-apt-command: additional-dev-apt-env:
 runtime-apt-deps: additional-runtime-apt-deps: runtime-apt-command: additional-runtime-apt-command: additional-runtime-apt-env:
+disable-mysql-client-installation constraints-location: disable-pip-cache install-local-pip-wheels
 "
 
 _breeze_commands="
