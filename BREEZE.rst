@@ -2094,12 +2094,6 @@ This is the current syntax for  `./breeze <./breeze>`_:
   ****************************************************************************************************
    Additional actions executed starting Airflow
 
-  --load-example-dags
-          Include Airflow example dags.
-
-  --load-default-connections
-          Include Airflow Default Connections.
-
   --skip-example-dags
           Airflow example dags will not be included.
 

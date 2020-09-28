@@ -124,6 +124,7 @@ function breeze::setup_default_breeze_constants() {
 
     # If set to true, the sample dags will be created
     export LOAD_EXAMPLES="false"
+
     # If it set is set to specified version, then the source version of Airflow
     # is removed and the specified version of Airflow is installed from PyPi
     export INSTALL_AIRFLOW_VERSION=""
@@ -2303,7 +2304,6 @@ ${FORMATTED_DEFAULT_CI_EXTRAS}
         Production image:
 ${FORMATTED_DEFAULT_PROD_EXTRAS}
 
-<<<<<<< HEAD
 --image-tag TAG
         Additional tag in the image.
 
@@ -2312,8 +2312,6 @@ ${FORMATTED_DEFAULT_PROD_EXTRAS}
 --disable-pip-cache
         Disables GitHub PIP cache during the build. Useful if github is not reachable during build.
 
-=======
->>>>>>> Constraints and PIP packages can be installed from local sources (#204)
 --additional-extras
         Additional extras to pass to build images The default is no additional extras.
 
