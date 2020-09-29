@@ -37,6 +37,7 @@ function local_mounts::generate_local_mounts_list {
         "$prefix"NOTICE:/opt/airflow/NOTICE:cached
         "$prefix"airflow:/opt/airflow/airflow:cached
         "$prefix"backport_packages:/opt/airflow/backport_packages:cached
+        "$prefix"chart:/opt/airflow/chart:cached
         "$prefix"dags:/opt/airflow/dags:cached
         "$prefix"dev:/opt/airflow/dev:cached
         "$prefix"docs:/opt/airflow/docs:cached
