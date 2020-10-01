@@ -81,14 +81,10 @@ def exec_airflow_command(command_to_exec: List[str], proctitle_prefix: Optional[
     :param command_to_exec: list of program arguments. The first element should contain the "airflow" element.
     :type command_to_exec List[str]
     """
-    parser = get_parser()
-
-    if command_to_exec[0] != "airflow":
-        raise AirflowException('The first element must be equal to "airflow".')
-
+    BaseExecutor.validate_command(command_to_exec)
     # drop "airflow"
     command_to_exec = command_to_exec[1:]
-    args = parser.parse_args(command_to_exec)
+    args = get_parser().parse_args(command_to_exec)
 
     if proctitle_prefix:
         proc_title = "{proctitle_prefix}: {args.dag_id} {args.task_id} {args.execution_date}"
