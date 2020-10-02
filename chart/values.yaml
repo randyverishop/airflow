@@ -460,6 +460,14 @@ pgbouncer:
   logDisconnections: 0
   logConnections: 0
 
+  sslmode: "prefer"
+  ciphers: "normal"
+
+  ssl:
+    ca: ""
+    cert: ""
+    key: ""
+
 redis:
   terminationGracePeriodSeconds: 600
 
