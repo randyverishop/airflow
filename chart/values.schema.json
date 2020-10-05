@@ -457,6 +457,15 @@
                         }
                     }
                 },
+                "kerberosSidecar": {
+                  "description": "Run a side car in each worker pod to refresh kerberos ccache with `airflow kerberos` according to the airflow secuirty configuration",
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "description": "Enable kerberos side car on worker pods."
+                    }
+                  }
+                },
                 "resources": {
                     "type": "object"
                 },
@@ -467,6 +476,10 @@
                 "safeToEvict": {
                     "description": "This setting tells Kubernetes that it's ok to evict when it wants to scale a node down.",
                     "type": "boolean"
+                },
+                "serviceAccountAnnotations": {
+                  "description": "Annotations to add to the worker kubernetes service account.",
+                  "type": "object"
                 }
             }
         },
@@ -507,6 +520,10 @@
                 "safeToEvict": {
                     "description": "This setting tells Kubernetes that its ok to evict when it wants to scale a node down.",
                     "type": "boolean"
+                },
+                "serviceAccountAnnotations": {
+                  "description": "Annotations to add to the scheduler kubernetes service account.",
+                  "type": "object"
                 }
             }
         },
@@ -631,6 +648,10 @@
                             "type": "object"
                         }
                     }
+                },
+                "serviceAccountAnnotations": {
+                  "description": "Annotations to add to the webserver kubernetes service account.",
+                  "type": "object"
                 }
             }
         },
@@ -1054,6 +1075,84 @@
                     }
                 }
             }
+        },
+      "kerberos": {
+        "description": "Kerberos configurations for airflow",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "description": "Enable kerberos.",
+            "type": "boolean"
+          },
+          "ccacheMountPath": {
+            "description": "Path to mount shared volume for kerberos credentials cache.",
+            "type": "string"
+          },
+          "ccacheFileName": {
+            "description": "Name for kerberos credentials cache file.",
+            "type": "string"
+          },
+          "configPath":{
+            "description": "Path to mount krb5.conf kerberos configuration file.",
+            "type": "string"
+          },
+          "keytabPath":{
+            "description": "Path to mount the keytab for refreshing credentials in the kerberos sidecar.",
+            "type": "string"
+          },
+          "principal":{
+            "description": "Principal to use when refreshing kerberos credentials.",
+            "type": "string"
+          },
+          "reinitFrequency": {
+            "description": "How often (in seconds) airflow kerberos will reinitialize the credentials cache.",
+            "type": "integer"
+          },
+          "config": {
+            "description": "Contents of krb5.conf.",
+            "type": "string"
+          }
         }
+      },
+      "hadoop": {
+        "description": "Hadoop configurations.",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "description": "Enable Hadoop configurations.",
+            "type": "boolean"
+          },
+          "configPath": {
+            "description": "Path for volume mount for Hadoop configuration files.",
+            "type": "string"
+          },
+          "core": {
+            "description": "Contents of core-site.xml.",
+            "type": ["string", "null"]
+          },
+          "yarn": {
+            "description": "Contents of yarn-site.xml.",
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "spark": {
+        "description": "Spark configurations.",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "description": "Enable Spark configurations.",
+            "type": "boolean"
+          },
+          "configPath": {
+            "description": "Path for volume mount for Hadoop configuration files.",
+            "type": "string"
+          },
+          "sparkEnv": {
+            "description": "Contents of spark-env.sh.",
+            "type": "string"
+          }
+        }
+      }
     }
 }

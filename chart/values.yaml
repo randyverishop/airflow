@@ -250,7 +250,7 @@ spark:
   configPath: '/etc/spark/conf/'
   # Contents of spark-env.sh
   sparkEnv: |
-    export HADOOP_CONFDIR={{ .Values.hadoop.configPath | quote}}
+    export HADOOP_CONFDIR={{ .Values.hadoop.configPath | quote }}
     export SPARK_HOME={{ .Values.spark.homePath | quote }}
 
 # Airflow Worker Config
@@ -304,6 +304,8 @@ workers:
   # This setting tells kubernetes that its ok to evict
   # when it wants to scale a node down.
   safeToEvict: true
+  # Annotations to add to worker kubernetes service account.
+  serviceAccountAnnotations: {}
 
 # Airflow scheduler settings
 scheduler:
@@ -330,6 +332,9 @@ scheduler:
   # This setting tells kubernetes that its ok to evict
   # when it wants to scale a node down.
   safeToEvict: true
+
+  # Annotations to add to scheduler kubernetes service account.
+  serviceAccountAnnotations: {}
 
 # Airflow webserver settings
 webserver:
@@ -390,6 +395,9 @@ webserver:
     type: ClusterIP
     ## service annotations
     annotations: {}
+
+  # Annotations to add to webserver kubernetes service account.
+  serviceAccountAnnotations: {}
 
 # Flower settings
 flower:
