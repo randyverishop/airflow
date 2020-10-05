@@ -177,7 +177,6 @@ or
 
   export DOCKER_CACHE="disabled"
 
-
 Choosing image registry
 =======================
 
