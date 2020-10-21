@@ -417,9 +417,10 @@ def create_default_connections(session=None):
         Connection(
             conn_id="presto_default",
             conn_type="presto",
-            host="localhost",
+            host="presto",
+            login="airflow",
             schema="hive",
-            port=3400,
+            port=8080,
         ),
         session
     )
