@@ -21,6 +21,8 @@ Example Airflow DAG that uses Google PubSub services.
 """
 import os
 
+from google.cloud.pubsub_v1.types import Duration, ExpirationPolicy
+
 from airflow import models
 from airflow.operators.bash import BashOperator
 from airflow.providers.google.cloud.operators.pubsub import (
@@ -118,8 +120,15 @@ with models.DAG(
     # [END howto_operator_gcp_pubsub_create_topic]
 
     # [START howto_operator_gcp_pubsub_create_subscription]
+    duration = Duration()
+    duration.FromSeconds(86400)  # 86400s == 1 day
+    expiration_policy = ExpirationPolicy(ttl=duration)
+
     subscribe_task = PubSubCreateSubscriptionOperator(
-        task_id="subscribe_task", project_id=GCP_PROJECT_ID, topic=TOPIC_FOR_OPERATOR_DAG
+        task_id="subscribe_task",
+        project_id=GCP_PROJECT_ID,
+        topic=TOPIC_FOR_OPERATOR_DAG,
+        expiration_policy=expiration_policy,
     )
     # [END howto_operator_gcp_pubsub_create_subscription]
 
