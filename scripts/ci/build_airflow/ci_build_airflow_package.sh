@@ -15,24 +15,22 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-export MOUNT_LOCAL_SOURCES="false"
-
 # shellcheck source=scripts/ci/libraries/_script_init.sh
 . "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
 
-function run_test_package_install() {
-    docker run "${EXTRA_DOCKER_FLAGS[@]}" \
-        --entrypoint "/usr/local/bin/dumb-init"  \
-        -v "${AIRFLOW_SOURCES}/dist:/dist:cached" \
-        -v "${AIRFLOW_SOURCES}/empty:/opt/airflow/airflow:cached" \
-        -v "${AIRFLOW_SOURCES}/scripts/in_container:/opt/airflow/scripts/in_container:cached" \
-        "${AIRFLOW_CI_IMAGE}" \
-        "--" "/opt/airflow/scripts/in_container/run_test_package_install.sh" "${1}"
-}
+rm -rf -- *egg-info*
 
-build_images::prepare_ci_build
+pip install --upgrade "pip==${PIP_VERSION}" "wheel==${WHEEL_VERSION}"
 
-build_images::rebuild_ci_image_if_needed
+# Prepare airflow's wheel
+python setup.py compile_assets sdist bdist_wheel
 
-run_test_package_install whl
-run_test_package_install tar.gz
+# clean-up
+rm -rf -- *egg-info*
+
+dump_file="/tmp/airflow_$(date +"%Y%m%d-%H%M%S").tar.gz"
+
+cd "${AIRFLOW_SOURCES}/dist" || exit 1
+tar -cvzf "${dump_file}" .
+
+echo "Airflow is in dist and also tar-gzipped in ${dump_file}"
