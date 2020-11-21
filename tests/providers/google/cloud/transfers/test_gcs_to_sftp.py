@@ -19,10 +19,9 @@
 
 import os
 import unittest
-
-import mock
-from parameterized import parameterized
 from unittest import mock
+
+from parameterized import parameterized
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.cloud.transfers.gcs_to_sftp import GCSToSFTPOperator
