@@ -83,25 +83,38 @@ ALL_PROVIDERS = [
 ]
 
 CONNECTIONS_LIST = [
+    'aws',
+    'azure',
     'azure_batch',
+    'azure_container_instances',
     'azure_cosmos',
     'azure_data_lake',
     'cassandra',
     'cloudant',
+    'databricks',
     'dataprep',
     'docker',
     'elasticsearch',
+    'emr',
     'exasol',
+    'facebook_social',
+    'ftp',
     'gcpcloudsql',
+    'gcpcloudsqldb',
     'gcpssh',
     'google_cloud_platform',
     'grpc',
+    'hdfs',
     'hive_cli',
+    'hive_metastore',
     'hiveserver2',
+    'http',
     'imap',
     'jdbc',
+    'jenkins',
     'jira',
     'kubernetes',
+    'livy',
     'mongo',
     'mssql',
     'mysql',
@@ -110,12 +123,22 @@ CONNECTIONS_LIST = [
     'pig_cli',
     'postgres',
     'presto',
+    'qubole',
     'redis',
+    's3',
+    'samba',
+    'segment',
     'snowflake',
+    'spark',
+    'spark_jdbc',
+    'spark_sql',
     'sqlite',
+    'sqoop',
+    'ssh',
     'tableau',
     'vertica',
     'wasb',
+    'yandex',
 ]
 
 
@@ -129,7 +152,6 @@ class TestProviderManager(unittest.TestCase):
             version = provider_manager.providers[provider][0]
             self.assertRegex(version, r'[0-9]*\.[0-9]*\.[0-9]*.*')
             self.assertEqual(package_name, provider)
-
         self.assertEqual(ALL_PROVIDERS, provider_list)
 
     def test_hooks(self):

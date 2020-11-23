@@ -29,6 +29,8 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Mapping, NoReturn, Optional, Sequence, Tuple, Type, Union
 
+from flask_appbuilder.fieldwidgets import BS3PasswordFieldWidget, BS3TextFieldWidget
+from flask_babel import lazy_gettext
 from google.api_core.retry import Retry
 from google.cloud.bigquery import (
     DEFAULT_RETRY,
@@ -51,6 +53,8 @@ from pandas_gbq.gbq import (
     _check_google_client_version as gbq_check_google_client_version,
     _test_google_api_imports as gbq_test_google_api_imports,
 )
+from wtforms import IntegerField, PasswordField, StringField
+from wtforms.validators import NumberRange
 
 from airflow.exceptions import AirflowException
 from airflow.hooks.dbapi_hook import DbApiHook
@@ -70,6 +74,31 @@ class BigQueryHook(GoogleBaseHook, DbApiHook):
     conn_name_attr = 'gcp_conn_id'
     default_conn_name = 'google_cloud_default'
     conn_type = 'google_cloud_platform'
+    hook_name = 'Google Cloud'
+
+    @staticmethod
+    def monkey_patch_connection_form():
+        """Add connection-specific fields to ConnectionForm class"""
+        from airflow.www.forms import ConnectionForm
+
+        ConnectionForm.extra__google_cloud_platform__project = StringField(
+            lazy_gettext('Project Id'), widget=BS3TextFieldWidget()
+        )
+        ConnectionForm.extra__google_cloud_platform__key_path = StringField(
+            lazy_gettext('Keyfile Path'), widget=BS3TextFieldWidget()
+        )
+        ConnectionForm.extra__google_cloud_platform__keyfile_dict = PasswordField(
+            lazy_gettext('Keyfile JSON'), widget=BS3PasswordFieldWidget()
+        )
+        ConnectionForm.extra__google_cloud_platform__scope = StringField(
+            lazy_gettext('Scopes (comma separated)'), widget=BS3TextFieldWidget()
+        )
+        ConnectionForm.extra__google_cloud_platform__num_retries = IntegerField(
+            lazy_gettext('Number of Retries'),
+            validators=[NumberRange(min=0)],
+            widget=BS3TextFieldWidget(),
+            default=5,
+        )
 
     def __init__(
         self,

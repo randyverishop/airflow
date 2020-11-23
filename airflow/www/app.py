@@ -27,6 +27,7 @@ from flask_wtf.csrf import CSRFProtect
 from airflow import settings
 from airflow.configuration import conf
 from airflow.logging_config import configure_logging
+from airflow.providers_manager import ProvidersManager
 from airflow.utils.json import AirflowJsonEncoder
 from airflow.www.extensions.init_appbuilder import init_appbuilder
 from airflow.www.extensions.init_appbuilder_links import init_appbuilder_links
@@ -79,6 +80,8 @@ def create_app(config=None, testing=False, app_name="Airflow"):
     flask_app.config['SESSION_COOKIE_HTTPONLY'] = True
     flask_app.config['SESSION_COOKIE_SECURE'] = conf.getboolean('webserver', 'COOKIE_SECURE')
     flask_app.config['SESSION_COOKIE_SAMESITE'] = conf.get('webserver', 'COOKIE_SAMESITE')
+
+    ProvidersManager()
 
     if config:
         flask_app.config.from_mapping(config)

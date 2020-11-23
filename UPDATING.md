@@ -52,6 +52,11 @@ assists users migrating to a new version.
 
 ## Master
 
+### SparkJDBCHook default connection
+
+For SparkJDBCHook default connection was `spark-default`, and for SparkSubmitHook it was
+`spark_default`. Both hooks now use the "spark_default" which is common pattern across all providers.
+
 ### Azure Wasb Hook does not work together with Snowflake hook
 
 The WasbHook in Apache Airflow use a legacy version of Azure library. While the conflict is not
@@ -65,7 +70,6 @@ The `all` extras were reduced to include only user-facing dependencies. This mea
 that this extra does not contain development dependencies. If you were relying on
 `all` extra then you should use now `devel_all` or figure out if you need development
 extras at all.
-
 
 ### `[scheduler] max_threads` config has been renamed to `[scheduler] parsing_processes`
 

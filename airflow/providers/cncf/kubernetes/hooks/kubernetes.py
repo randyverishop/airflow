@@ -19,7 +19,10 @@ from typing import Any, Generator, Optional, Tuple, Union
 
 import yaml
 from cached_property import cached_property
+from flask_appbuilder.fieldwidgets import BS3TextFieldWidget
+from flask_babel import lazy_gettext
 from kubernetes import client, config, watch
+from wtforms import BooleanField, StringField
 
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
@@ -57,6 +60,23 @@ class KubernetesHook(BaseHook):
     conn_name_attr = 'kubernetes_conn_id'
     default_conn_name = 'kubernetes_default'
     conn_type = 'kubernetes'
+    hook_name = 'Kubernetes Cluster Connection'
+
+    @staticmethod
+    def monkey_patch_connection_form():
+        """Add connection-specific fields to ConnectionForm class"""
+        from airflow.www.forms import ConnectionForm
+
+        ConnectionForm.extra__kubernetes__in_cluster = BooleanField(lazy_gettext('In cluster configuration'))
+        ConnectionForm.extra__kubernetes__kube_config_path = StringField(
+            lazy_gettext('Kube config path'), widget=BS3TextFieldWidget()
+        )
+        ConnectionForm.extra__kubernetes__kube_config = StringField(
+            lazy_gettext('Kube config (JSON format)'), widget=BS3TextFieldWidget()
+        )
+        ConnectionForm.extra__kubernetes__namespace = StringField(
+            lazy_gettext('Namespace'), widget=BS3TextFieldWidget()
+        )
 
     def __init__(
         self, conn_id: str = default_conn_name, client_configuration: Optional[client.Configuration] = None

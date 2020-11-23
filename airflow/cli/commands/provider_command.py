@@ -71,6 +71,8 @@ def _tabulate_hooks(hook_items: Tuple[str, Tuple[str, str]], tablefmt: str):
             'Connection type': hook_item[0],
             'Hook class': hook_item[1][0],
             'Hook connection attribute name': hook_item[1][1],
+            'Package name': hook_item[1][2],
+            'Connection name': hook_item[1][3],
         }
         for hook_item in hook_items
     ]

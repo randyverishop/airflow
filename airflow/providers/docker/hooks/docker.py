@@ -37,6 +37,7 @@ class DockerHook(BaseHook, LoggingMixin):
     conn_name_attr = 'docker_conn_id'
     default_conn_name = 'docker_default'
     conn_type = 'docker'
+    hook_name = 'Docker Registry'
 
     def __init__(
         self,

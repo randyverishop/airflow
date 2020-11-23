@@ -730,6 +730,9 @@ class RefactorBackportPackages:
             .rename("add_sidecar")
         )
 
+    def refactor_www(self):
+        (self.qry.select_module("airflow.www").rename("airflow.www_rbac"))
+
     def do_refactor(self, in_process: bool = False) -> None:  # noqa
         self.rename_deprecated_modules()
         self.refactor_amazon_package()
@@ -741,6 +744,7 @@ class RefactorBackportPackages:
         self.add_provide_context_to_python_operators()
         self.remove_poke_mode_only_decorator()
         self.refactor_kubernetes_pod_operator()
+        self.refactor_www()
         # In order to debug Bowler - set in_process to True
         self.qry.execute(write=True, silent=False, interactive=False, in_process=in_process)
 
