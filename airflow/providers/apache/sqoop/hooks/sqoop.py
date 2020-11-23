@@ -52,6 +52,11 @@ class SqoopHook(BaseHook):
     :type properties: dict
     """
 
+    conn_name_attr = 'conn_id'
+    default_conn_name = 'sqoop_default'
+    conn_type = 'sqoop'
+    hook_name = 'Sqoop'
+
     def __init__(
         self,
         conn_id: str = 'sqoop_default',

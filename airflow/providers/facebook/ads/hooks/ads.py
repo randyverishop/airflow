@@ -55,9 +55,15 @@ class FacebookAdsReportingHook(BaseHook):
 
     """
 
+    conn_name_attr = 'facebook_conn_id'
+    default_conn_name = 'facebook_default'
+    conn_type = 'facebook_social'
+    hook_name = 'Facebook Social'
+    supports_autocommit = True
+
     def __init__(
         self,
-        facebook_conn_id: str = "facebook_default",
+        facebook_conn_id: str = default_conn_name,
         api_version: str = "v6.0",
     ) -> None:
         super().__init__()

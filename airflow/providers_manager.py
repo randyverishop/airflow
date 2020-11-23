@@ -17,12 +17,13 @@
 # under the License.
 """Manages all providers."""
 import fnmatch
+import functools
 import importlib
 import json
 import logging
 import os
 from collections import OrderedDict
-from typing import Dict, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 import jsonschema
 import yaml
@@ -32,7 +33,7 @@ from airflow.utils.entry_points import entry_points_with_dist
 try:
     import importlib.resources as importlib_resources
 except ImportError:
-    # Try backported to PY<37 `importlib_resources`.
+    # Try back-ported to PY<37 `importlib_resources`.
     import importlib_resources
 
 
@@ -66,8 +67,10 @@ class ProvidersManager:
         # Keeps dict of providers keyed by module name and value is Tuple: version, provider_info
         self._provider_dict: Dict[str, Tuple[str, Dict]] = {}
         # Keeps dict of hooks keyed by connection type and value is
-        # Tuple: connection class, connection_id_attribute_name
-        self._hooks_dict: Dict[str, Tuple[str, str]] = {}
+        # Tuple: connection class, connection_id_attribute_name, package_name, hook_name
+        self._hooks_dict: Dict[str, Tuple[str, str, str, str]] = {}
+        # Keeps methods that should be used to monkey patch ConnectionForm
+        self._monkey_patching_hook_methods: List[Callable] = []
         self._validator = _create_validator()
         # Local source folders are loaded first. They should take precedence over the package ones for
         # Development purpose. In production provider.yaml files are not present in the 'airflow" directory
@@ -173,7 +176,18 @@ class ProvidersManager:
                 for hook_class_name in hook_class_names:
                     self._add_hook(hook_class_name, provider_package)
 
-    def _add_hook(self, hook_class_name, provider_package) -> None:
+    @staticmethod
+    def _get_attr(obj: Any, attr_name: str):
+        """Retrieves optional attributes of an object."""
+        if not hasattr(obj, attr_name):
+            log.warning(
+                "The '%s' is missing connection_type attribute and cannot be registered",
+                obj,
+            )
+            return None
+        return getattr(obj, attr_name)
+
+    def _add_hook(self, hook_class_name: str, provider_package: str) -> None:
         """
         Adds hook class name to list of hooks
 
@@ -199,6 +213,8 @@ class ProvidersManager:
         try:
             module, class_name = hook_class_name.rsplit('.', maxsplit=1)
             hook_class = getattr(importlib.import_module(module), class_name)
+            if hasattr(hook_class, 'monkey_patch_connection_form'):
+                self._monkey_patching_hook_methods.append(hook_class.monkey_patch_connection_form)
         except Exception as e:  # noqa pylint: disable=broad-except
             log.warning(
                 "Exception when importing '%s' from '%s' package: %s",
@@ -207,22 +223,20 @@ class ProvidersManager:
                 e,
             )
             return
-        conn_type = getattr(hook_class, 'conn_type')
-        if not conn_type:
-            log.warning(
-                "The hook_class '%s' is missing connection_type attribute and cannot be registered",
-                hook_class,
-            )
-            return
-        connection_id_attribute_name = getattr(hook_class, 'conn_name_attr')
-        if not connection_id_attribute_name:
-            log.warning(
-                "The hook_class '%s' is missing conn_name_attr attribute and cannot be registered",
-                hook_class,
-            )
+
+        conn_type: str = self._get_attr(hook_class, 'conn_type')
+        connection_id_attribute_name: str = self._get_attr(hook_class, 'conn_name_attr')
+        hook_name: str = self._get_attr(hook_class, 'hook_name')
+
+        if not conn_type or not connection_id_attribute_name or not hook_name:
             return
 
-        self._hooks_dict[conn_type] = (hook_class_name, connection_id_attribute_name)
+        self._hooks_dict[conn_type] = (
+            hook_class_name,
+            connection_id_attribute_name,
+            provider_package,
+            hook_name,
+        )
 
     @property
     def providers(self):
@@ -233,3 +247,9 @@ class ProvidersManager:
     def hooks(self):
         """Returns dictionary of connection_type-to-hook mapping"""
         return self._hooks_dict
+
+    @functools.lru_cache(maxsize=None)
+    def monkey_patch_connection_form(self, form_to_patch):
+        """Monkey patches form class passed as parameters by all hooks that requested it."""
+        for method in self._monkey_patching_hook_methods:
+            method(form_to_patch)

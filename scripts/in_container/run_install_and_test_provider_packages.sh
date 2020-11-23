@@ -101,7 +101,7 @@ function discover_all_hooks() {
 
     airflow providers hooks
 
-    local expected_number_of_hooks=33
+    local expected_number_of_hooks=56
     local actual_number_of_hooks
     actual_number_of_hooks=$(airflow providers hooks --output table | grep -c conn_id | xargs)
     if [[ ${actual_number_of_hooks} != "${expected_number_of_hooks}" ]]; then

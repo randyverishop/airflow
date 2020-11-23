@@ -19,12 +19,15 @@
 from typing import Callable, Generator, List, Optional
 
 import grpc
+from flask_appbuilder.fieldwidgets import BS3TextFieldWidget
+from flask_babel import lazy_gettext
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 from google.auth.transport import (
     grpc as google_auth_transport_grpc,
     requests as google_auth_transport_requests,
 )
+from wtforms import StringField
 
 from airflow.exceptions import AirflowConfigException
 from airflow.hooks.base_hook import BaseHook
@@ -50,6 +53,20 @@ class GrpcHook(BaseHook):
     conn_name_attr = 'grpc_conn_id'
     default_conn_name = 'grpc_default'
     conn_type = 'grpc'
+    hook_name = 'GRPC Connection'
+
+    @staticmethod
+    def monkey_patch_connection_form(form_to_patch):
+        """Add connection-specific fields to ConnectionForm class"""
+        form_to_patch.extra__grpc__auth_type = StringField(
+            lazy_gettext('Grpc Auth Type'), widget=BS3TextFieldWidget()
+        )
+        form_to_patch.extra__grpc__credential_pem_file = StringField(
+            lazy_gettext('Credential Keyfile Path'), widget=BS3TextFieldWidget()
+        )
+        form_to_patch.extra__grpc__scopes = StringField(
+            lazy_gettext('Scopes (comma separated)'), widget=BS3TextFieldWidget()
+        )
 
     def __init__(
         self,

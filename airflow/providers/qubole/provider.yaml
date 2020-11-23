@@ -45,3 +45,6 @@ hooks:
     python-modules:
       - airflow.providers.qubole.hooks.qubole
       - airflow.providers.qubole.hooks.qubole_check
+
+hook-class-names:
+  - airflow.providers.qubole.hooks.qubole.QuboleHook

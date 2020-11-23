@@ -19,6 +19,9 @@
 from typing import Optional
 
 import jaydebeapi
+from flask_appbuilder.fieldwidgets import BS3TextFieldWidget
+from flask_babel import lazy_gettext
+from wtforms import StringField
 
 from airflow.hooks.dbapi_hook import DbApiHook
 from airflow.models.connection import Connection
@@ -36,7 +39,18 @@ class JdbcHook(DbApiHook):
     conn_name_attr = 'jdbc_conn_id'
     default_conn_name = 'jdbc_default'
     conn_type = 'jdbc'
+    hook_name = 'JDBC Connection'
     supports_autocommit = True
+
+    @staticmethod
+    def monkey_patch_connection_form(form_to_patch):
+        """Add connection-specific fields to ConnectionForm class"""
+        form_to_patch.extra__jdbc__drv_path = StringField(
+            lazy_gettext('Driver Path'), widget=BS3TextFieldWidget()
+        )
+        form_to_patch.extra__jdbc__drv_clsname = StringField(
+            lazy_gettext('Driver Class'), widget=BS3TextFieldWidget()
+        )
 
     def get_conn(self) -> jaydebeapi.Connection:
         conn: Connection = self.get_connection(getattr(self, self.conn_name_attr))

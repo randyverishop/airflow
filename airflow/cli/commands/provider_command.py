@@ -70,5 +70,7 @@ def hooks_list(args):
             "connection_type": x[0],
             "class": x[1][0],
             "conn_attribute_name": x[1][1],
+            'package_name': x[1][2],
+            'connection_name': x[1][3],
         },
     )

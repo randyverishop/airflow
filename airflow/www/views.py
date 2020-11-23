@@ -2854,6 +2854,7 @@ class ConnectionModelView(AirflowModelView):
         'port',
         'extra',
     ] + extra_fields
+
     add_form = edit_form = ConnectionForm
     add_template = 'airflow/conn_create.html'
     edit_template = 'airflow/conn_edit.html'
