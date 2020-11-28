@@ -18,65 +18,82 @@
 # shellcheck source=scripts/in_container/_in_container_script_init.sh
 . "$( dirname "${BASH_SOURCE[0]}" )/_in_container_script_init.sh"
 
-setup_provider_packages
+function check_install_airflow_version_set() {
+    if [[ ${INSTALL_AIRFLOW_VERSION=""} == "" ]]; then
+        echo
+        echo "${COLOR_RED_ERROR} You have to specify airflow version to install.${COLOR_RESET}"
+        echo
+        echo "It might be version from PyPI, wheel with extras or none to uninstall airflow"
+        echo
+        exit 1
+    fi
+}
 
-echo
-echo "Testing if all classes in import packages can be imported"
-echo
+function check_package_format_set() {
+    PACKAGE_FORMAT=${PACKAGE_FORMAT=}
 
-if [[ ${INSTALL_AIRFLOW_VERSION=""} == "" ]]; then
-    echo
-    echo "${COLOR_RED_ERROR} You have to specify airflow version to install.${COLOR_RESET}"
-    echo
-    echo "It might be version from PyPI, wheel with extras or none to uninstall airflow"
-    echo
-    exit 1
-fi
+    if [[ ${PACKAGE_FORMAT} != "wheel" && ${PACKAGE_FORMAT} != "sdist" ]]; then
+        echo
+        echo  "${COLOR_RED_ERROR} Wrong install type ${PACKAGE_FORMAT}. Should be 'wheel' or 'sdist'  ${COLOR_RESET}"
+        echo
+        exit 3
+    fi
+}
 
-PACKAGE_FORMAT=${PACKAGE_FORMAT=}
+function install_provider_packages() {
+    if [[ ${PACKAGE_FORMAT} == "wheel" ]]; then
+        install_all_provider_packages_from_wheels
+    elif [[ ${PACKAGE_FORMAT} == "sdist" ]]; then
+        install_all_provider_packages_from_tar_gz_files
+    else
+        echo
+        echo "${COLOR_RED_ERROR} Wrong package format ${PACKAGE_FORMAT}. Should be wheel or sdist${COLOR_RESET}"
+        echo
+        exit 1
+    fi
+}
 
-if [[ ${PACKAGE_FORMAT} != "wheel" && ${PACKAGE_FORMAT} != "sdist" ]]; then
+function import_all_provider_classes() {
     echo
-    echo  "${COLOR_RED_ERROR} Wrong install type ${PACKAGE_FORMAT}. Should be 'wheel' or 'sdist'  ${COLOR_RESET}"
+    echo "Importing all Airflow classes"
     echo
-    exit 3
-fi
 
-if [[ ${INSTALL_AIRFLOW_VERSION} == "none"  ]]; then
-    echo
-    echo "Skip installing airflow - only install wheel packages that are present locally"
-    echo
-    uninstall_airflow_and_providers
-elif [[ ${INSTALL_AIRFLOW_VERSION} == "wheel"  ]]; then
-    echo
-    echo "Install airflow from wheel including [all] extras"
-    echo
-    uninstall_airflow_and_providers
-    install_airflow_from_wheel "[all]"
-else
-    echo
-    echo "Install airflow from PyPI including [all] extras"
-    echo
-    install_released_airflow_version "${INSTALL_AIRFLOW_VERSION}" "[all]"
-fi
+    # We have to move out a directory where "airflow" is
+    # We need to make sure we are not in the airflow checkout and unset PYTHONPATH
+    # otherwise it will automatically be added to the
+    # import path
+    cd /
+    unset PYTHONPATH
 
-echo
-echo "Installs all remaining dependencies that are not installed by 'all' "
-echo
-install_remaining_dependencies
+    declare -a IMPORT_CLASS_PARAMETERS
 
-if [[ ${PACKAGE_FORMAT} == "wheel" ]]; then
-    install_all_provider_packages_from_wheels
-elif [[ ${PACKAGE_FORMAT} == "sdist" ]]; then
-    install_all_provider_packages_from_tar_gz_files
-else
     echo
-    echo "${COLOR_RED_ERROR} Wrong package format ${PACKAGE_FORMAT}. Should be wheel or sdist${COLOR_RESET}"
+    echo "Checking for providers location"
     echo
-    exit 1
-fi
+    PROVIDER_PATHS=$(
+        python3 <<EOF 2>"${OUTPUT_PRINTED_ONLY_ON_ERROR}"
+import airflow.providers;
+path=airflow.providers.__path__
+for p in path._path:
+    print(p)
+EOF
+    )
+    export PROVIDER_PATHS
 
-import_all_provider_classes
+    echo
+    echo "Searching for providers packages in:"
+    echo
+    echo "${PROVIDER_PATHS}"
+
+    while read -r provider_path; do
+        IMPORT_CLASS_PARAMETERS+=("--path" "${provider_path}")
+    done < <(echo "${PROVIDER_PATHS}")
+
+    echo
+    echo "Running import all classes"
+    echo
+    python3 /opt/airflow/dev/import_all_classes.py "${IMPORT_CLASS_PARAMETERS[@]}"
+}
 
 function discover_all_provider_packages() {
     echo
@@ -190,6 +207,20 @@ function discover_all_field_behaviours() {
     fi
 }
 
+check_install_airflow_version_set
+check_package_format_set
+
+setup_provider_package_variables
+
+get_constraints_for_just_installed_airflow
+install_airflow
+install_remaining_dependencies
+
+# No matter which airflow version - providers/backport providers should use constraints from master
+export CONSTRAINTS_BRANCH="constraints-master"
+
+install_provider_packages
+import_all_provider_classes
 
 if [[ ${BACKPORT_PACKAGES} != "true" ]]; then
     discover_all_provider_packages
