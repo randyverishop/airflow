@@ -31,6 +31,7 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse
 
 import lazy_object_proxy
+import marshmallow
 import nvd3
 import sqlalchemy as sqla
 import yaml
@@ -77,6 +78,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.dagcode import DagCode
 from airflow.models.dagrun import DagRun, DagRunType
 from airflow.models.taskinstance import TaskInstance
+from airflow.providers_manager import ProvidersManager
 from airflow.security import permissions
 from airflow.ti_deps.dep_context import DepContext
 from airflow.ti_deps.dependencies_deps import RUNNING_DEPS, SCHEDULER_QUEUED_DEPS
@@ -84,6 +86,7 @@ from airflow.utils import json as utils_json, timezone
 from airflow.utils.dates import infer_time_unit, scale_time_units
 from airflow.utils.helpers import alchemy_to_dict
 from airflow.utils.log.log_reader import TaskLogReader
+from airflow.utils.module_loading import import_string
 from airflow.utils.session import create_session, provide_session
 from airflow.utils.state import State
 from airflow.version import version
@@ -95,6 +98,7 @@ from airflow.www.forms import (
     DateTimeForm,
     DateTimeWithNumRunsForm,
     DateTimeWithNumRunsWithDagRunsForm,
+    form_behaviour_schema,
 )
 from airflow.www.widgets import AirflowModelListWidget
 
@@ -2813,24 +2817,24 @@ class ConnectionModelView(AirflowModelView):
     ]
 
     extra_fields = [
-        'extra__jdbc__drv_path',
-        'extra__jdbc__drv_clsname',
+        # 'extra__jdbc__drv_path',
+        # 'extra__jdbc__drv_clsname',
         'extra__google_cloud_platform__project',
         'extra__google_cloud_platform__key_path',
         'extra__google_cloud_platform__keyfile_dict',
         'extra__google_cloud_platform__scope',
         'extra__google_cloud_platform__num_retries',
-        'extra__grpc__auth_type',
-        'extra__grpc__credential_pem_file',
-        'extra__grpc__scopes',
-        'extra__yandexcloud__service_account_json',
-        'extra__yandexcloud__service_account_json_path',
-        'extra__yandexcloud__oauth',
-        'extra__yandexcloud__public_ssh_key',
-        'extra__yandexcloud__folder_id',
-        'extra__kubernetes__in_cluster',
-        'extra__kubernetes__kube_config',
-        'extra__kubernetes__namespace',
+        # 'extra__grpc__auth_type',
+        # 'extra__grpc__credential_pem_file',
+        # 'extra__grpc__scopes',
+        # 'extra__yandexcloud__service_account_json',
+        # 'extra__yandexcloud__service_account_json_path',
+        # 'extra__yandexcloud__oauth',
+        # 'extra__yandexcloud__public_ssh_key',
+        # 'extra__yandexcloud__folder_id',
+        # 'extra__kubernetes__in_cluster',
+        # 'extra__kubernetes__kube_config',
+        # 'extra__kubernetes__namespace',
     ]
     list_columns = [
         'conn_id',
@@ -2897,6 +2901,28 @@ class ConnectionModelView(AirflowModelView):
             if value:
                 field = getattr(form, field)
                 field.data = value
+
+    @expose('/form-behaviour')
+    def get_form_behaviour(self):
+        """List loaded plugins."""
+        conn_type = request.args.get('conn_type', '')
+        if not conn_type:
+            return wwwutils.json_response({"error": "The conn_type parameter is required."})
+
+        hook_class_name, _, _, _ = ProvidersManager().hooks.get(conn_type, (None, None, None, None))
+        if not hook_class_name:
+            return wwwutils.json_response({"form_behaviour": None, "error": None})
+
+        hook = import_string(hook_class_name)
+        if not hasattr(hook, 'get_form_behaviour'):
+            return wwwutils.json_response({"form_behaviour": None, "error": None})
+        form_behaviour = hook.get_form_behaviour()
+
+        try:
+            form_behaviours_data = form_behaviour_schema.dump(form_behaviour)
+            return wwwutils.json_response({"form_behaviour": form_behaviours_data, "error": None})
+        except marshmallow.exceptions.ValidationError as ex:
+            return wwwutils.json_response({"form_behaviour": None, "error": str(ex)})
 
 
 class PluginView(AirflowBaseView):

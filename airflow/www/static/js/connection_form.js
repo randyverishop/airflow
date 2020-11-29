@@ -19,94 +19,77 @@
 /**
  * Created by janomar on 23/07/15.
  */
+/* eslint-env browser, jquery */
 
 $(document).ready(function () {
-  var config = {
-    jdbc: {
-      hidden_fields: ['port', 'schema', 'extra'],
-      relabeling: {'host': 'Connection URL'},
-    },
-    google_cloud_platform: {
-      hidden_fields: ['host', 'schema', 'login', 'password', 'port', 'extra'],
-      relabeling: {},
-    },
-    cloudant: {
-      hidden_fields: ['port', 'extra'],
-      relabeling: {
-        'host': 'Account',
-        'login': 'Username (or API Key)',
-        'schema': 'Database'
-      }
-    },
-    docker: {
-      hidden_fields: ['port', 'schema'],
-      relabeling: {
-        'host': 'Registry URL',
-        'login': 'Username',
-      },
-    },
-    qubole: {
-      hidden_fields: ['login', 'schema', 'port', 'extra'],
-      relabeling: {
-        'host': 'API Endpoint',
-        'password': 'Auth Token',
-      },
-      placeholders: {
-        'host': 'https://<env>.qubole.com/api'
-      }
-    },
-    kubernetes: {
-      hidden_fields: ['host', 'schema', 'login', 'password', 'port', 'extra'],
-      relabeling: {},
-    },
-    ssh: {
-      hidden_fields: ['schema'],
-      relabeling: {
-        'login': 'Username',
-      }
-    },
-    yandexcloud: {
-      hidden_fields: ['host', 'schema', 'login', 'password', 'port', 'extra'],
-      relabeling: {},
-    },
-    spark: {
-      hidden_fields: ['schema', 'login', 'password'],
-      relabeling: {},
-    },
-  };
+  const url = $('meta[name="get-form-behaviour-url"]').attr('content');
+  const cache = {};
+  const connTypeField = $('#conn_type');
 
-  function connTypeChange(connectionType) {
-    $(".hide").removeClass("hide");
+  function clearConnFormState() {
     $.each($("[id^='extra__']"), function () {
-      $(this).parent().parent().addClass('hide')
+      $(this).parent().parent().addClass('hide');
     });
-    $.each($("[id^='extra__" + connectionType + "']"), function () {
-      $(this).parent().parent().removeClass('hide')
+    $('label[orig_text]').each(function () {
+      $(this).text($(this).attr('orig_text'));
     });
-    $("label[orig_text]").each(function () {
-      $(this).text($(this).attr("orig_text"));
+    $('.form-control').each(function() {
+      $(this).attr('placeholder', '');
     });
-    $(".form-control").each(function(){$(this).attr('placeholder', '')});
-
-    if (config[connectionType] != undefined) {
-      $.each(config[connectionType].hidden_fields, function (i, field) {
-        $("#" + field).parent().parent().addClass('hide')
-      });
-      $.each(config[connectionType].relabeling, function (k, v) {
-        lbl = $("label[for='" + k + "']");
-        lbl.attr("orig_text", lbl.text());
-        $("label[for='" + k + "']").text(v);
-      });
-      $.each(config[connectionType].placeholders, function(k, v){
-        $("#" + k).attr('placeholder', v);
-      });
-    }
   }
 
-  var connectionType = $("#conn_type").val();
-  $("#conn_type").on('change', function (e) {
-    connectionType = $("#conn_type").val();
+  function setFormBehaviour(formBehaviour, connectionType) {
+    clearConnFormState();
+    if (!formBehaviour) {
+      return;
+    }
+
+    $.each(formBehaviour.hidden_fields, function (i, field) {
+      $(`#${field}`).parent().parent().addClass('hide');
+    });
+
+    $.each($(`[id^='extra__${connectionType}']`), function () {
+      $(this).parent().parent().removeClass('hide');
+    });
+
+    $.each(formBehaviour.relabeling, function (k, v) {
+      const lbl = $(`label[for='${k}']`);
+      lbl.attr('orig_text', lbl.text()).text(v);
+    });
+
+    $.each(formBehaviour.placeholders, function(k, v) {
+      $(`#${k}`).attr('placeholder', v);
+    });
+  }
+
+  function connTypeChange(connectionType) {
+    if (connectionType in cache) {
+      setFormBehaviour(cache[connectionType], connectionType);
+    }
+    $.ajax({
+      url,
+      data: {
+        conn_type: connectionType,
+      },
+    }).done(function(data) {
+      if (data.error) {
+        alert(data.error);
+      } else {
+        cache[connectionType] = data.form_behaviour;
+        // In an asynchronous operation, we need to check that the user has not changed the field.
+        if (connTypeField.val() === connectionType) {
+          setFormBehaviour(cache[connectionType], connectionType);
+        }
+      }
+    });
+  }
+
+  let connectionType = connTypeField.val();
+  connTypeField.on('change', function (e) {
+    connectionType = connTypeField.val();
     connTypeChange(connectionType);
   });
-  connTypeChange(connectionType);
+  if (connTypeField.val()) {
+    connTypeChange(connectionType);
+  }
 });

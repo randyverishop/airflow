@@ -19,6 +19,12 @@
 
 {% extends 'appbuilder/general/model/edit.html' %}
 
+{% block head_meta %}
+  {{ super() }}
+
+  <meta name="get-form-behaviour-url" content="{{ url_for('ConnectionModelView.get_form_behaviour') }}">
+{% endblock %}
+
 {% block tail %}
   {{ super() }}
   <script src="{{ url_for_asset(filename='connectionForm.js') }}"></script>

@@ -20,6 +20,7 @@ import json
 from datetime import datetime as dt
 from functools import lru_cache
 from operator import itemgetter
+from typing import Dict, List, NamedTuple
 
 import pendulum
 from flask_appbuilder.fieldwidgets import (
@@ -31,6 +32,7 @@ from flask_appbuilder.fieldwidgets import (
 from flask_appbuilder.forms import DynamicForm
 from flask_babel import lazy_gettext
 from flask_wtf import FlaskForm
+from marshmallow import Schema, fields, validate
 from wtforms import widgets
 from wtforms.fields import (
     BooleanField,
@@ -170,8 +172,8 @@ def get_connection_types():
         ('fs', 'File (path)'),
         ('mesos_framework-id', 'Mesos Framework ID'),
     ]
-    for connection_type, _, _, hook_name in ProvidersManager().hooks.values():
-        __connection_types.append((connection_type, hook_name))
+    for conn_type, (_, _, _, hook_name) in ProvidersManager().hooks.items():
+        __connection_types.append((conn_type, hook_name))
     return __connection_types
 
 
@@ -199,3 +201,25 @@ class ConnectionForm(DynamicForm):
     # need to be prefixed with extra__ and then the conn_type ___ as in
     # extra__{conn_type}__name. You can also hide form elements and rename
     # others from the connection_form.js file
+
+
+CUSTOMIZABLE_FIELDS = ["host", "schema", "login", "password", "port", "extra"]
+
+
+class FormBehaviour(NamedTuple):
+    hidden_fields: List[str]
+    relabeling: Dict[str, str]
+    placeholders: Dict[str, str]
+
+
+class FormBehaviourSchema(Schema):
+    hidden_fields = fields.List(fields.String)
+    relabeling = fields.Dict(
+        keys=fields.String(validate=validate.OneOf(CUSTOMIZABLE_FIELDS)), values=fields.String()
+    )
+    placeholders = fields.Dict(
+        keys=fields.String(validate=validate.OneOf(CUSTOMIZABLE_FIELDS)), values=fields.String()
+    )
+
+
+form_behaviour_schema = FormBehaviourSchema()

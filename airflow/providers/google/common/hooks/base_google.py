@@ -516,3 +516,13 @@ class GoogleBaseHook(BaseHook):
         while done is False:
             _, done = downloader.next_chunk()
         file_handle.flush()
+
+    @staticmethod
+    def get_form_behaviour():
+        from airflow.www.forms import FormBehaviour
+
+        return FormBehaviour(
+            hidden_fields=['host', 'schema', 'login', 'password', 'port', 'extra'],
+            relabeling={},
+            placeholders={}
+        )
