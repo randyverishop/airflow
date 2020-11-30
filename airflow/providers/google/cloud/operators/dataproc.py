@@ -33,9 +33,10 @@ from google.api_core.exceptions import AlreadyExists, NotFound
 from google.api_core.retry import Retry, exponential_sleep_generator
 from google.cloud.dataproc_v1beta2.types import (  # pylint: disable=no-name-in-module
     Cluster,
-    Duration,
-    FieldMask,
+    # Duration,
+    # FieldMask,
 )
+from google.protobuf.internal.well_known_types import FieldMask, Duration
 from google.protobuf.json_format import MessageToDict
 
 from airflow.exceptions import AirflowException
