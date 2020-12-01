@@ -37,7 +37,6 @@ from google.cloud.dataproc_v1beta2.types import (  # pylint: disable=no-name-in-
 )
 from google.cloud import dataproc
 from google.protobuf.internal.well_known_types import FieldMask, Duration
-from google.protobuf.json_format import MessageToDict
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
@@ -626,6 +625,7 @@ class DataprocCreateClusterOperator(BaseOperator):
             self._handle_error_state(hook, cluster)
 
         return Cluster.to_dict(cluster)
+
 
 class DataprocScaleClusterOperator(BaseOperator):
     """
