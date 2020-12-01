@@ -33,15 +33,15 @@ from google.api_core.exceptions import AlreadyExists, NotFound
 from google.api_core.retry import Retry, exponential_sleep_generator
 from google.cloud.dataproc_v1beta2.types import (  # pylint: disable=no-name-in-module
     Cluster,
-    # Duration,
-    # FieldMask,
+
 )
+from google.cloud import dataproc
 from google.protobuf.internal.well_known_types import FieldMask, Duration
 from google.protobuf.json_format import MessageToDict
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
-from airflow.providers.google.cloud.hooks.dataproc import DataprocHook, DataProcJobBuilder
+from airflow.providers.google.cloud.hooks.new_dataproc import DataprocHook, DataProcJobBuilder
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.utils import timezone
 from airflow.utils.decorators import apply_defaults
@@ -563,7 +563,7 @@ class DataprocCreateClusterOperator(BaseOperator):
         )
 
     def _handle_error_state(self, hook: DataprocHook, cluster: Cluster) -> None:
-        if cluster.status.state != cluster.status.ERROR:
+        if cluster.status.state != dataproc.ClusterStatus.State.ERROR:
             return
         self.log.info("Cluster is in ERROR state")
         gcs_uri = hook.diagnose_cluster(
@@ -614,19 +614,18 @@ class DataprocCreateClusterOperator(BaseOperator):
 
         # Check if cluster is not in ERROR state
         self._handle_error_state(hook, cluster)
-        if cluster.status.state == cluster.status.CREATING:
+        if cluster.status.state == dataproc.ClusterStatus.State.CREATING:
             # Wait for cluster to be be created
             cluster = self._wait_for_cluster_in_creating_state(hook)
             self._handle_error_state(hook, cluster)
-        elif cluster.status.state == cluster.status.DELETING:
+        elif cluster.status.state == dataproc.ClusterStatus.State.DELETING:
             # Wait for cluster to be deleted
             self._wait_for_cluster_in_deleting_state(hook)
             # Create new cluster
             cluster = self._create_cluster(hook)
             self._handle_error_state(hook, cluster)
 
-        return MessageToDict(cluster)
-
+        return Cluster.to_dict(cluster)
 
 class DataprocScaleClusterOperator(BaseOperator):
     """
