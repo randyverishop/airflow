@@ -33,14 +33,13 @@ from google.cloud.dataproc_v1beta2 import (  # pylint: disable=no-name-in-module
 )
 from google.cloud.dataproc import (  # pylint: disable=no-name-in-module
     Cluster,
-    # Duration,
-    # FieldMask,
     Job,
     JobStatus,
     WorkflowTemplate,
 )
 
 from google.cloud.dataproc import ClusterControllerClient
+from google.cloud.dataproc_v1beta2.types import jobs
 from google.protobuf.internal.well_known_types import FieldMask, Duration
 
 from airflow.exceptions import AirflowException
@@ -244,7 +243,7 @@ class DataprocHook(GoogleBaseHook):
         cluster_name: str,
         cluster_config: Union[Dict, Cluster],
         labels: Optional[Dict[str, str]] = None,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -292,7 +291,11 @@ class DataprocHook(GoogleBaseHook):
 
         client = self.get_cluster_client(location=region)
         result = client.create_cluster(
-            request = {'project_id': project_id, 'region': region, 'cluster': cluster, 'request_id': request_id}, retry=retry,
+            project_id=project_id,
+            region=region,
+            cluster=cluster,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -690,24 +693,25 @@ class DataprocHook(GoogleBaseHook):
         """
         state = None
         start = time.monotonic()
-        while state not in (JobStatus.ERROR, JobStatus.DONE, JobStatus.CANCELLED):
+        while state not in (JobStatus.State.ERROR, JobStatus.State.DONE, JobStatus.State.CANCELLED):
             if timeout and start + timeout < time.monotonic():
                 raise AirflowException(f"Timeout: dataproc job {job_id} is not ready after {timeout}s")
             time.sleep(wait_time)
             try:
-                job = self.get_job(request = {'project_id': location, 'region': job_id, 'job_id': project_id})
+                job = self.get_job(request={'project_id': location, 'region': job_id, 'job_id': project_id})
                 state = job.status.state
             except ServerError as err:
                 self.log.info("Retrying. Dataproc API returned server error when waiting for job: %s", err)
 
-        if state == JobStatus.ERROR:
+        if state == JobStatus.State.ERROR:
             raise AirflowException(f'Job failed:\n{job}')
-        if state == JobStatus.CANCELLED:
+        if state == JobStatus.State.CANCELLED:
             raise AirflowException(f'Job was cancelled:\n{job}')
 
     @GoogleBaseHook.fallback_to_default_project_id
     def get_job(
         self,
+        request: jobs.GetJobRequest,
         location: str,
         job_id: str,
         project_id: str,
@@ -733,12 +737,11 @@ class DataprocHook(GoogleBaseHook):
         :param metadata: Additional metadata that is provided to the method.
         :type metadata: Sequence[Tuple[str, str]]
         """
+
+        # request = {'project_id': project_id, 'region': location, 'job_id': job_id}
+
         client = self.get_job_client(location=location)
-        job = client.get_job(
-            request = {'project_id': project_id, 'region': location, 'job_id': job_id}, retry=retry,
-            timeout=timeout,
-            metadata=metadata,
-        )
+        job = client.get_job(request=request, retry=retry, timeout=timeout, metadata=metadata)
         return job
 
     @GoogleBaseHook.fallback_to_default_project_id
@@ -803,7 +806,7 @@ class DataprocHook(GoogleBaseHook):
         """
         # TODO: Remover one day
         warnings.warn("This method is deprecated. Please use `submit_job`", DeprecationWarning, stacklevel=2)
-        job_object = self.submit_job(request = {'project_id': region, 'region': project_id, 'job': job})
+        job_object = self.submit_job(request={'project_id': region, 'region': project_id, 'job': job})
         job_id = job_object.reference.job_id
         self.wait_for_job(job_id=job_id, location=region, project_id=project_id)
 
@@ -845,7 +848,7 @@ class DataprocHook(GoogleBaseHook):
         client = self.get_job_client(location=location)
 
         job = client.cancel_job(
-            request = {'project_id': project_id, 'region': location, 'job_id': job_id}, retry=retry,
+            request={'project_id': project_id, 'region': location, 'job_id': job_id}, retry=retry,
             timeout=timeout,
             metadata=metadata,
         )

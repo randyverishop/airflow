@@ -31,17 +31,15 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.api_core.retry import Retry, exponential_sleep_generator
-from google.cloud.dataproc_v1beta2.types import (  # pylint: disable=no-name-in-module
-    Cluster,
-
-)
 from google.cloud import dataproc
+from google.cloud.dataproc_v1beta2.types import Cluster  # pylint: disable=no-name-in-module
+
 from google.protobuf.internal.well_known_types import FieldMask, Duration
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
-from airflow.providers.google.cloud.hooks.new_dataproc import DataprocHook, DataProcJobBuilder
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
+from airflow.providers.google.cloud.hooks.new_dataproc import DataprocHook, DataProcJobBuilder
 from airflow.utils import timezone
 from airflow.utils.decorators import apply_defaults
 
@@ -522,7 +520,7 @@ class DataprocCreateClusterOperator(BaseOperator):
         self.labels = labels
         self.project_id = project_id
         self.region = region
-        self.request_id = request_id
+        # self.request_id = request_id
         self.retry = retry
         self.timeout = timeout
         self.metadata = metadata
@@ -538,7 +536,7 @@ class DataprocCreateClusterOperator(BaseOperator):
             cluster_name=self.cluster_name,
             labels=self.labels,
             cluster_config=self.cluster_config,
-            request_id=self.request_id,
+            # request_id=self.request_id,
             retry=self.retry,
             timeout=self.timeout,
             metadata=self.metadata,
@@ -624,7 +622,7 @@ class DataprocCreateClusterOperator(BaseOperator):
             cluster = self._create_cluster(hook)
             self._handle_error_state(hook, cluster)
 
-        return Cluster.to_dict(cluster)
+        return cluster.__class__.to_dict(cluster)
 
 
 class DataprocScaleClusterOperator(BaseOperator):
