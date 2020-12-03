@@ -148,73 +148,73 @@ with models.DAG("example_gcp_dataproc", start_date=days_ago(1), schedule_interva
     )
     # [END how_to_cloud_dataproc_create_cluster_operator]
 
-    # # [START how_to_cloud_dataproc_update_cluster_operator]
-    # scale_cluster = DataprocUpdateClusterOperator(
-    #     task_id="scale_cluster",
-    #     cluster_name=CLUSTER_NAME,
-    #     cluster=CLUSTER_UPDATE,
-    #     update_mask=UPDATE_MASK,
-    #     graceful_decommission_timeout=TIMEOUT,
-    #     project_id=PROJECT_ID,
-    #     location=REGION,
-    # )
-    # # [END how_to_cloud_dataproc_update_cluster_operator]
-    #
-    # pig_task = DataprocSubmitJobOperator(
-    #     task_id="pig_task", job=PIG_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    # spark_sql_task = DataprocSubmitJobOperator(
-    #     task_id="spark_sql_task", job=SPARK_SQL_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    #
-    # spark_task = DataprocSubmitJobOperator(
-    #     task_id="spark_task", job=SPARK_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    #
-    # # [START cloud_dataproc_async_submit_sensor]
-    # spark_task_async = DataprocSubmitJobOperator(
-    #     task_id="spark_task_async", job=SPARK_JOB, location=REGION, project_id=PROJECT_ID, asynchronous=True
-    # )
-    #
-    # spark_task_async_sensor = DataprocJobSensor(
-    #     task_id='spark_task_async_sensor_task',
-    #     location=REGION,
-    #     project_id=PROJECT_ID,
-    #     dataproc_job_id="{{task_instance.xcom_pull(task_ids='spark_task_async')}}",
-    #     poke_interval=10,
-    # )
-    # # [END cloud_dataproc_async_submit_sensor]
-    #
-    # # [START how_to_cloud_dataproc_submit_job_to_cluster_operator]
-    # pyspark_task = DataprocSubmitJobOperator(
-    #     task_id="pyspark_task", job=PYSPARK_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    # # [END how_to_cloud_dataproc_submit_job_to_cluster_operator]
-    #
-    # sparkr_task = DataprocSubmitJobOperator(
-    #     task_id="sparkr_task", job=SPARKR_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    #
-    # hive_task = DataprocSubmitJobOperator(
-    #     task_id="hive_task", job=HIVE_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    #
-    # hadoop_task = DataprocSubmitJobOperator(
-    #     task_id="hadoop_task", job=HADOOP_JOB, location=REGION, project_id=PROJECT_ID
-    # )
-    #
-    # # [START how_to_cloud_dataproc_delete_cluster_operator]
-    # delete_cluster = DataprocDeleteClusterOperator(
-    #     task_id="delete_cluster", project_id=PROJECT_ID, cluster_name=CLUSTER_NAME, region=REGION
-    # )
-    # # [END how_to_cloud_dataproc_delete_cluster_operator]
-    #
-    # create_cluster >> scale_cluster
-    # scale_cluster >> hive_task >> delete_cluster
-    # scale_cluster >> pig_task >> delete_cluster
-    # scale_cluster >> spark_sql_task >> delete_cluster
-    # scale_cluster >> spark_task >> delete_cluster
-    # scale_cluster >> spark_task_async >> spark_task_async_sensor >> delete_cluster
-    # scale_cluster >> pyspark_task >> delete_cluster
-    # scale_cluster >> sparkr_task >> delete_cluster
-    # scale_cluster >> hadoop_task >> delete_cluster
+    # [START how_to_cloud_dataproc_update_cluster_operator]
+    scale_cluster = DataprocUpdateClusterOperator(
+        task_id="scale_cluster",
+        cluster_name=CLUSTER_NAME,
+        cluster=CLUSTER_UPDATE,
+        update_mask=UPDATE_MASK,
+        graceful_decommission_timeout=TIMEOUT,
+        project_id=PROJECT_ID,
+        location=REGION,
+    )
+    # [END how_to_cloud_dataproc_update_cluster_operator]
+
+    pig_task = DataprocSubmitJobOperator(
+        task_id="pig_task", job=PIG_JOB, location=REGION, project_id=PROJECT_ID
+    )
+    spark_sql_task = DataprocSubmitJobOperator(
+        task_id="spark_sql_task", job=SPARK_SQL_JOB, location=REGION, project_id=PROJECT_ID
+    )
+
+    spark_task = DataprocSubmitJobOperator(
+        task_id="spark_task", job=SPARK_JOB, location=REGION, project_id=PROJECT_ID
+    )
+
+    # [START cloud_dataproc_async_submit_sensor]
+    spark_task_async = DataprocSubmitJobOperator(
+        task_id="spark_task_async", job=SPARK_JOB, location=REGION, project_id=PROJECT_ID, asynchronous=True
+    )
+
+    spark_task_async_sensor = DataprocJobSensor(
+        task_id='spark_task_async_sensor_task',
+        location=REGION,
+        project_id=PROJECT_ID,
+        dataproc_job_id="{{task_instance.xcom_pull(task_ids='spark_task_async')}}",
+        poke_interval=10,
+    )
+    # [END cloud_dataproc_async_submit_sensor]
+
+    # [START how_to_cloud_dataproc_submit_job_to_cluster_operator]
+    pyspark_task = DataprocSubmitJobOperator(
+        task_id="pyspark_task", job=PYSPARK_JOB, location=REGION, project_id=PROJECT_ID
+    )
+    # [END how_to_cloud_dataproc_submit_job_to_cluster_operator]
+
+    sparkr_task = DataprocSubmitJobOperator(
+        task_id="sparkr_task", job=SPARKR_JOB, location=REGION, project_id=PROJECT_ID
+    )
+
+    hive_task = DataprocSubmitJobOperator(
+        task_id="hive_task", job=HIVE_JOB, location=REGION, project_id=PROJECT_ID
+    )
+
+    hadoop_task = DataprocSubmitJobOperator(
+        task_id="hadoop_task", job=HADOOP_JOB, location=REGION, project_id=PROJECT_ID
+    )
+
+    # [START how_to_cloud_dataproc_delete_cluster_operator]
+    delete_cluster = DataprocDeleteClusterOperator(
+        task_id="delete_cluster", project_id=PROJECT_ID, cluster_name=CLUSTER_NAME, region=REGION
+    )
+    # [END how_to_cloud_dataproc_delete_cluster_operator]
+
+    create_cluster >> scale_cluster
+    scale_cluster >> hive_task >> delete_cluster
+    scale_cluster >> pig_task >> delete_cluster
+    scale_cluster >> spark_sql_task >> delete_cluster
+    scale_cluster >> spark_task >> delete_cluster
+    scale_cluster >> spark_task_async >> spark_task_async_sensor >> delete_cluster
+    scale_cluster >> pyspark_task >> delete_cluster
+    scale_cluster >> sparkr_task >> delete_cluster
+    scale_cluster >> hadoop_task >> delete_cluster

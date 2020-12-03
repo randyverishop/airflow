@@ -33,8 +33,7 @@ from google.api_core.exceptions import AlreadyExists, NotFound
 from google.api_core.retry import Retry, exponential_sleep_generator
 from google.cloud import dataproc
 from google.cloud.dataproc_v1beta2.types import Cluster  # pylint: disable=no-name-in-module
-
-from google.protobuf.internal.well_known_types import FieldMask, Duration
+from google.protobuf.internal.well_known_types import FieldMask
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
@@ -467,7 +466,7 @@ class DataprocCreateClusterOperator(BaseOperator):
         project_id: Optional[str] = None,
         cluster_config: Optional[Dict] = None,
         labels: Optional[Dict] = None,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         delete_on_error: bool = True,
         use_if_exists: bool = True,
         retry: Optional[Retry] = None,
@@ -560,6 +559,7 @@ class DataprocCreateClusterOperator(BaseOperator):
         )
 
     def _handle_error_state(self, hook: DataprocHook, cluster: Cluster) -> None:
+        # pylint: disable=maybe-no-member
         if cluster.status.state != dataproc.ClusterStatus.State.ERROR:
             return
         self.log.info("Cluster is in ERROR state")
@@ -611,11 +611,16 @@ class DataprocCreateClusterOperator(BaseOperator):
 
         # Check if cluster is not in ERROR state
         self._handle_error_state(hook, cluster)
+        # pylint: disable=maybe-no-member
         if cluster.status.state == dataproc.ClusterStatus.State.CREATING:
             # Wait for cluster to be be created
             cluster = self._wait_for_cluster_in_creating_state(hook)
             self._handle_error_state(hook, cluster)
-        elif cluster.status.state == dataproc.ClusterStatus.State.DELETING:
+        elif (
+            # pylint: disable=maybe-no-member
+            cluster.status.state
+            == dataproc.ClusterStatus.State.DELETING
+        ):
             # Wait for cluster to be deleted
             self._wait_for_cluster_in_deleting_state(hook)
             # Create new cluster
@@ -758,7 +763,7 @@ class DataprocScaleClusterOperator(BaseOperator):
             location=self.region,
             cluster_name=self.cluster_name,
             cluster=scaling_cluster_data,
-            graceful_decommission_timeout=self._graceful_decommission_timeout_object,
+            # graceful_decommission_timeout=self._graceful_decommission_timeout_object,
             update_mask={'paths': update_mask},
         )
         operation.result()
@@ -813,7 +818,7 @@ class DataprocDeleteClusterOperator(BaseOperator):
         region: str,
         cluster_name: str,
         cluster_uuid: Optional[str] = None,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -826,7 +831,7 @@ class DataprocDeleteClusterOperator(BaseOperator):
         self.region = region
         self.cluster_name = cluster_name
         self.cluster_uuid = cluster_uuid
-        self.request_id = request_id
+        # self.request_id = request_id
         self.retry = retry
         self.timeout = timeout
         self.metadata = metadata
@@ -840,8 +845,8 @@ class DataprocDeleteClusterOperator(BaseOperator):
             project_id=self.project_id,
             region=self.region,
             cluster_name=self.cluster_name,
-            cluster_uuid=self.cluster_uuid,
-            request_id=self.request_id,
+            # cluster_uuid=self.cluster_uuid,
+            # request_id=self.request_id,
             retry=self.retry,
             timeout=self.timeout,
             metadata=self.metadata,
@@ -1635,7 +1640,7 @@ class DataprocInstantiateWorkflowTemplateOperator(BaseOperator):
             location=self.region,
             template_name=self.template_id,
             version=self.version,
-            request_id=self.request_id,
+            # request_id=self.request_id,
             parameters=self.parameters,
             retry=self.retry,
             timeout=self.timeout,
@@ -1733,7 +1738,7 @@ class DataprocInstantiateInlineWorkflowTemplateOperator(BaseOperator):
             template=self.template,
             project_id=self.project_id,
             location=self.location,
-            request_id=self.request_id,
+            # request_id=self.request_id,
             retry=self.retry,
             timeout=self.timeout,
             metadata=self.metadata,
@@ -1832,7 +1837,7 @@ class DataprocSubmitJobOperator(BaseOperator):
             project_id=self.project_id,
             location=self.location,
             job=self.job,
-            request_id=self.request_id,
+            # request_id=self.request_id,
             retry=self.retry,
             timeout=self.timeout,
             metadata=self.metadata,
@@ -1917,7 +1922,7 @@ class DataprocUpdateClusterOperator(BaseOperator):
         cluster_name: str,
         cluster: Union[Dict, Cluster],
         update_mask: Union[Dict, FieldMask],
-        graceful_decommission_timeout: Union[Dict, Duration],
+        # graceful_decommission_timeout: Union[Dict, Duration],
         request_id: Optional[str] = None,
         project_id: Optional[str] = None,
         retry: Retry = None,
@@ -1933,7 +1938,7 @@ class DataprocUpdateClusterOperator(BaseOperator):
         self.cluster_name = cluster_name
         self.cluster = cluster
         self.update_mask = update_mask
-        self.graceful_decommission_timeout = graceful_decommission_timeout
+        # self.graceful_decommission_timeout = graceful_decommission_timeout
         self.request_id = request_id
         self.retry = retry
         self.timeout = timeout
@@ -1950,8 +1955,8 @@ class DataprocUpdateClusterOperator(BaseOperator):
             cluster_name=self.cluster_name,
             cluster=self.cluster,
             update_mask=self.update_mask,
-            graceful_decommission_timeout=self.graceful_decommission_timeout,
-            request_id=self.request_id,
+            # graceful_decommission_timeout=self.graceful_decommission_timeout,
+            # request_id=self.request_id,
             retry=self.retry,
             timeout=self.timeout,
             metadata=self.metadata,

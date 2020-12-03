@@ -26,21 +26,18 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from cached_property import cached_property
 from google.api_core.exceptions import ServerError
 from google.api_core.retry import Retry
-from google.cloud.dataproc_v1beta2 import (  # pylint: disable=no-name-in-module
-    ClusterControllerClient,
-    JobControllerClient,
-    WorkflowTemplateServiceClient,
-)
 from google.cloud.dataproc import (  # pylint: disable=no-name-in-module
     Cluster,
+    ClusterControllerClient,
     Job,
     JobStatus,
     WorkflowTemplate,
 )
-
-from google.cloud.dataproc import ClusterControllerClient
-from google.cloud.dataproc_v1beta2.types import jobs
-from google.protobuf.internal.well_known_types import FieldMask, Duration
+from google.cloud.dataproc_v1beta2 import (  # pylint: disable=no-name-in-module; ClusterControllerClient,
+    JobControllerClient,
+    WorkflowTemplateServiceClient,
+)
+from google.protobuf.internal.well_known_types import FieldMask
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
@@ -307,8 +304,8 @@ class DataprocHook(GoogleBaseHook):
         region: str,
         cluster_name: str,
         project_id: str,
-        cluster_uuid: Optional[str] = None,
-        request_id: Optional[str] = None,
+        # cluster_uuid: Optional[str] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -340,7 +337,12 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_cluster_client(location=region)
         result = client.delete_cluster(
-            request = {'project_id': project_id, 'region': region, 'cluster_name': cluster_name, 'cluster_uuid': cluster_uuid, 'request_id': request_id}, retry=retry,
+            project_id=project_id,
+            region=region,
+            cluster_name=cluster_name,
+            # cluster_uuid=cluster_uuid,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -377,7 +379,10 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_cluster_client(location=region)
         operation = client.diagnose_cluster(
-            request = {'project_id': project_id, 'region': region, 'cluster_name': cluster_name}, retry=retry,
+            project_id=project_id,
+            region=region,
+            cluster_name=cluster_name,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -415,7 +420,10 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_cluster_client(location=region)
         result = client.get_cluster(
-            request = {'project_id': project_id, 'region': region, 'cluster_name': cluster_name}, retry=retry,
+            project_id=project_id,
+            region=region,
+            cluster_name=cluster_name,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -456,7 +464,11 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_cluster_client(location=region)
         result = client.list_clusters(
-            request = {'project_id': project_id, 'region': region, 'filter': filter_, 'page_size': page_size}, retry=retry,
+            project_id=project_id,
+            region=region,
+            filter_=filter_,
+            page_size=page_size,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -470,8 +482,8 @@ class DataprocHook(GoogleBaseHook):
         cluster: Union[Dict, Cluster],
         update_mask: Union[Dict, FieldMask],
         project_id: str,
-        graceful_decommission_timeout: Optional[Union[Dict, Duration]] = None,
-        request_id: Optional[str] = None,
+        # graceful_decommission_timeout: Optional[Union[Dict, Duration]] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -536,7 +548,14 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_cluster_client(location=location)
         operation = client.update_cluster(
-            request = {'project_id': project_id, 'region': location, 'cluster_name': cluster_name, 'cluster': cluster, 'update_mask': update_mask, 'graceful_decommission_timeout': graceful_decommission_timeout, 'request_id': request_id}, retry=retry,
+            project_id=project_id,
+            region=location,
+            cluster_name=cluster_name,
+            cluster=cluster,
+            update_mask=update_mask,
+            # graceful_decommission_timeout=graceful_decommission_timeout,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -574,7 +593,7 @@ class DataprocHook(GoogleBaseHook):
         client = self.get_template_client
         parent = client.region_path(project_id, location)
         return client.create_workflow_template(
-            request = {'parent': parent, 'template': template}, retry=retry, timeout=timeout, metadata=metadata
+            parent=parent, template=template, retry=retry, timeout=timeout, metadata=metadata
         )
 
     @GoogleBaseHook.fallback_to_default_project_id
@@ -584,7 +603,7 @@ class DataprocHook(GoogleBaseHook):
         template_name: str,
         project_id: str,
         version: Optional[int] = None,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         parameters: Optional[Dict[str, str]] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
@@ -624,7 +643,11 @@ class DataprocHook(GoogleBaseHook):
         client = self.get_template_client
         name = client.workflow_template_path(project_id, location, template_name)
         operation = client.instantiate_workflow_template(
-            request = {'name': name, 'version': version, 'request_id': parameters, 'parameters': request_id}, retry=retry,
+            name=name,
+            version=version,
+            parameters=parameters,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -636,7 +659,7 @@ class DataprocHook(GoogleBaseHook):
         location: str,
         template: Union[Dict, WorkflowTemplate],
         project_id: str,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -667,7 +690,10 @@ class DataprocHook(GoogleBaseHook):
         client = self.get_template_client
         parent = client.region_path(project_id, location)
         operation = client.instantiate_inline_workflow_template(
-            request = {'parent': parent, 'template': template, 'request_id': request_id}, retry=retry,
+            parent=parent,
+            template=template,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -698,7 +724,7 @@ class DataprocHook(GoogleBaseHook):
                 raise AirflowException(f"Timeout: dataproc job {job_id} is not ready after {timeout}s")
             time.sleep(wait_time)
             try:
-                job = self.get_job(request={'project_id': location, 'region': job_id, 'job_id': project_id})
+                job = self.get_job(location=location, job_id=job_id, project_id=project_id)
                 state = job.status.state
             except ServerError as err:
                 self.log.info("Retrying. Dataproc API returned server error when waiting for job: %s", err)
@@ -711,7 +737,6 @@ class DataprocHook(GoogleBaseHook):
     @GoogleBaseHook.fallback_to_default_project_id
     def get_job(
         self,
-        request: jobs.GetJobRequest,
         location: str,
         job_id: str,
         project_id: str,
@@ -737,11 +762,16 @@ class DataprocHook(GoogleBaseHook):
         :param metadata: Additional metadata that is provided to the method.
         :type metadata: Sequence[Tuple[str, str]]
         """
-
         # request = {'project_id': project_id, 'region': location, 'job_id': job_id}
-
         client = self.get_job_client(location=location)
-        job = client.get_job(request=request, retry=retry, timeout=timeout, metadata=metadata)
+        job = client.get_job(
+            project_id=project_id,
+            region=location,
+            job_id=job_id,
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
         return job
 
     @GoogleBaseHook.fallback_to_default_project_id
@@ -750,7 +780,7 @@ class DataprocHook(GoogleBaseHook):
         location: str,
         job: Union[dict, Job],
         project_id: str,
-        request_id: Optional[str] = None,
+        # request_id: Optional[str] = None,
         retry: Optional[Retry] = None,
         timeout: Optional[float] = None,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
@@ -780,7 +810,11 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_job_client(location=location)
         return client.submit_job(
-            request = {'project_id': project_id, 'region': location, 'job': job, 'request_id': request_id}, retry=retry,
+            project_id=project_id,
+            region=location,
+            job=job,
+            # request_id=request_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
@@ -806,7 +840,7 @@ class DataprocHook(GoogleBaseHook):
         """
         # TODO: Remover one day
         warnings.warn("This method is deprecated. Please use `submit_job`", DeprecationWarning, stacklevel=2)
-        job_object = self.submit_job(request={'project_id': region, 'region': project_id, 'job': job})
+        job_object = self.submit_job(location=region, project_id=project_id, job=job)
         job_id = job_object.reference.job_id
         self.wait_for_job(job_id=job_id, location=region, project_id=project_id)
 
@@ -848,7 +882,10 @@ class DataprocHook(GoogleBaseHook):
         client = self.get_job_client(location=location)
 
         job = client.cancel_job(
-            request={'project_id': project_id, 'region': location, 'job_id': job_id}, retry=retry,
+            project_id=project_id,
+            region=location,
+            job_id=job_id,
+            retry=retry,
             timeout=timeout,
             metadata=metadata,
         )
