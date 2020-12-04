@@ -239,4 +239,4 @@ class ConnectionForm(DynamicForm):
     # others from the connection_form.js file
 
 
-ProvidersManager().monkey_patch_connection_form(ConnectionForm)
+# ProvidersManager().monkey_patch_connection_form(ConnectionForm)

@@ -69,8 +69,6 @@ class ProvidersManager:
         # Keeps dict of hooks keyed by connection type and value is
         # Tuple: connection class, connection_id_attribute_name, package_name, hook_name
         self._hooks_dict: Dict[str, Tuple[str, str, str, str]] = {}
-        # Keeps methods that should be used to monkey patch ConnectionForm
-        self._monkey_patching_hook_methods: List[Callable] = []
         self._validator = _create_validator()
         # Local source folders are loaded first. They should take precedence over the package ones for
         # Development purpose. In production provider.yaml files are not present in the 'airflow" directory
@@ -214,7 +212,7 @@ class ProvidersManager:
             module, class_name = hook_class_name.rsplit('.', maxsplit=1)
             hook_class = getattr(importlib.import_module(module), class_name)
             if hasattr(hook_class, 'monkey_patch_connection_form'):
-                self._monkey_patching_hook_methods.append(hook_class.monkey_patch_connection_form)
+                self._monkey_patchxing_hook_methods.append(hook_class.monkey_patch_connection_form)
         except Exception as e:  # noqa pylint: disable=broad-except
             log.warning(
                 "Exception when importing '%s' from '%s' package: %s",

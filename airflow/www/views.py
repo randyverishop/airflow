@@ -77,6 +77,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.dagcode import DagCode
 from airflow.models.dagrun import DagRun, DagRunType
 from airflow.models.taskinstance import TaskInstance
+from airflow.providers_manager import ProvidersManager
 from airflow.security import permissions
 from airflow.ti_deps.dep_context import DepContext
 from airflow.ti_deps.dependencies_deps import RUNNING_DEPS, SCHEDULER_QUEUED_DEPS
@@ -84,6 +85,8 @@ from airflow.utils import json as utils_json, timezone
 from airflow.utils.dates import infer_time_unit, scale_time_units
 from airflow.utils.helpers import alchemy_to_dict
 from airflow.utils.log.log_reader import TaskLogReader
+from airflow.utils.log.logging_mixin import LoggingMixin
+from airflow.utils.module_loading import import_string
 from airflow.utils.session import create_session, provide_session
 from airflow.utils.state import State
 from airflow.version import version
@@ -2790,7 +2793,7 @@ class XComModelView(AirflowModelView):
         item.value = XCom.serialize_value(item.value)
 
 
-class ConnectionModelView(AirflowModelView):
+class ConnectionModelView(AirflowModelView, LoggingMixin):
     """View to show records from Connections table"""
 
     route_base = '/connection'
@@ -2815,24 +2818,19 @@ class ConnectionModelView(AirflowModelView):
     ]
 
     extra_fields = [
-        'extra__jdbc__drv_path',
-        'extra__jdbc__drv_clsname',
-        'extra__google_cloud_platform__project',
-        'extra__google_cloud_platform__key_path',
-        'extra__google_cloud_platform__keyfile_dict',
-        'extra__google_cloud_platform__scope',
-        'extra__google_cloud_platform__num_retries',
-        'extra__grpc__auth_type',
-        'extra__grpc__credential_pem_file',
-        'extra__grpc__scopes',
-        'extra__yandexcloud__service_account_json',
-        'extra__yandexcloud__service_account_json_path',
-        'extra__yandexcloud__oauth',
-        'extra__yandexcloud__public_ssh_key',
-        'extra__yandexcloud__folder_id',
-        'extra__kubernetes__in_cluster',
-        'extra__kubernetes__kube_config',
-        'extra__kubernetes__namespace',
+        # 'extra__jdbc__drv_path',
+        # 'extra__jdbc__drv_clsname',
+        # 'extra__grpc__auth_type',
+        # 'extra__grpc__credential_pem_file',
+        # 'extra__grpc__scopes',
+        # 'extra__yandexcloud__service_account_json',
+        # 'extra__yandexcloud__service_account_json_path',
+        # 'extra__yandexcloud__oauth',
+        # 'extra__yandexcloud__public_ssh_key',
+        # 'extra__yandexcloud__folder_id',
+        # 'extra__kubernetes__in_cluster',
+        # 'extra__kubernetes__kube_config',
+        # 'extra__kubernetes__namespace',
     ]
     list_columns = [
         'conn_id',
@@ -2853,13 +2851,42 @@ class ConnectionModelView(AirflowModelView):
         'password',
         'port',
         'extra',
-    ] + extra_fields
+    ]
 
-    add_form = edit_form = ConnectionForm
     add_template = 'airflow/conn_create.html'
     edit_template = 'airflow/conn_edit.html'
 
     base_order = ('conn_id', 'asc')
+
+    def __init__(self, **kwargs):
+        self.add_form = self.edit_form = ConnectionForm
+        self.init_provider_fields(self.add_form)
+
+        super().__init__(**kwargs)
+
+    def init_provider_fields(self, form):
+        hooks = []
+        for hook_class_name, _, _, _ in  ProvidersManager().hooks.values():
+            hooks.append(import_string(hook_class_name))
+        self.log.info("hooks=%s", hooks)
+        hooks_with_form_fields = [
+            h
+            for h in hooks
+            if hasattr(h, 'get_connection_form_fields')
+        ]
+        self.log.info("hooks_with_form_fields=%s", hooks_with_form_fields)
+
+        extra_fields = []
+        for hook in hooks_with_form_fields:
+            fields = hook.get_connection_form_fields()
+            self.log.info("hook:%s, fields=%s ", hook, fields)
+            for field_key, field in fields.items():
+                setattr(self.add_form, field_key, field)
+                extra_fields.append(field_key)
+        self.extra_fields = extra_fields
+        self.add_columns.extend(self.extra_fields)
+        self.edit_columns.extend(self.extra_fields)
+        self.log.info("extra_fields=%s", extra_fields)
 
     @action('muldelete', 'Delete', 'Are you sure you want to delete selected records?', single=False)
     @auth.has_access(

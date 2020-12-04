@@ -49,6 +49,12 @@ from airflow.providers.google.cloud.utils.credentials_provider import (
 )
 from airflow.utils.process_utils import patch_environ
 
+
+from flask_appbuilder.fieldwidgets import BS3PasswordFieldWidget, BS3TextFieldWidget
+from flask_babel import lazy_gettext
+from wtforms import IntegerField, PasswordField, StringField
+from wtforms.validators import NumberRange
+
 log = logging.getLogger(__name__)
 
 
@@ -160,6 +166,30 @@ class GoogleBaseHook(BaseHook):
     default_conn_name = 'google_cloud_default'
     conn_type = 'google_cloud_platform'
     hook_name = 'Google Cloud'
+
+    @staticmethod
+    def get_connection_form_fields():
+        """Add connection-specific fields to ConnectionForm class"""
+        return {
+            'extra__google_cloud_platform__project': StringField(
+                lazy_gettext('Project Id'), widget=BS3TextFieldWidget()
+            ),
+            'extra__google_cloud_platform__key_path': StringField(
+                lazy_gettext('Keyfile Path'), widget=BS3TextFieldWidget()
+            ),
+            'extra__google_cloud_platform__keyfile_dict': PasswordField(
+                lazy_gettext('Keyfile JSON'), widget=BS3PasswordFieldWidget()
+            ),
+            'extra__google_cloud_platform__scope': StringField(
+                lazy_gettext('Scopes (comma separated)'), widget=BS3TextFieldWidget()
+            ),
+            'extra__google_cloud_platform__num_retries': IntegerField(
+                lazy_gettext('Number of Retries'),
+                validators=[NumberRange(min=0)],
+                widget=BS3TextFieldWidget(),
+                default=5,
+            )
+        }
 
     def __init__(
         self,
