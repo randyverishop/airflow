@@ -33,13 +33,12 @@ from google.cloud.dataproc_v1beta2 import (  # pylint: disable=no-name-in-module
 )
 from google.cloud.dataproc_v1beta2.types import (  # pylint: disable=no-name-in-module
     Cluster,
-    # Duration,
-    # FieldMask,
+    Duration,
+    FieldMask,
     Job,
     JobStatus,
     WorkflowTemplate,
 )
-from google.protobuf.internal.well_known_types import FieldMask, Duration
 
 from airflow.exceptions import AirflowException
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
