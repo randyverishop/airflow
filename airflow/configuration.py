@@ -223,7 +223,7 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
     def _validate_config_dependencies(self):
         """
         Validate that config values aren't invalid given other config values
-            or system-level limitations and requirements.
+        or system-level limitations and requirements.
         """
         is_executor_without_sqlite_support = self.get("core", "executor") not in (
             'DebugExecutor',
