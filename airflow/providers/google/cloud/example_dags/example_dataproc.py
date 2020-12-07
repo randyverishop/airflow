@@ -154,7 +154,7 @@ with models.DAG("example_gcp_dataproc", start_date=days_ago(1), schedule_interva
         cluster_name=CLUSTER_NAME,
         cluster=CLUSTER_UPDATE,
         update_mask=UPDATE_MASK,
-        graceful_decommission_timeout=TIMEOUT,
+        # graceful_decommission_timeout=TIMEOUT,
         project_id=PROJECT_ID,
         location=REGION,
     )

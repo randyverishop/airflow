@@ -21,7 +21,7 @@
 from google.cloud.dataproc_v1beta2.types import JobStatus
 
 from airflow.exceptions import AirflowException
-from airflow.providers.google.cloud.hooks.dataproc import DataprocHook
+from airflow.providers.google.cloud.hooks.new_dataproc import DataprocHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 
