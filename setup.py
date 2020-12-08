@@ -527,6 +527,7 @@ devel_hadoop = devel_minreq + hdfs + hive + kerberos + presto + webhdfs
 # Those are requirements that each provider package has
 PROVIDERS_REQUIREMENTS: Dict[str, Iterable[str]] = {
     "amazon": amazon,
+    "apache.beam": [],
     "apache.cassandra": cassandra,
     "apache.druid": druid,
     "apache.hdfs": hdfs,
