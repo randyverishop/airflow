@@ -627,7 +627,7 @@ class DataprocCreateClusterOperator(BaseOperator):
             cluster = self._create_cluster(hook)
             self._handle_error_state(hook, cluster)
 
-        return cluster.__class__.to_dict(cluster)
+        return dataproc.Cluster.to_dict(cluster)
 
 
 class DataprocScaleClusterOperator(BaseOperator):
