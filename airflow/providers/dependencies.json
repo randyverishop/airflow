@@ -8,6 +8,9 @@
     "postgres",
     "ssh"
   ],
+  "apache.beam": [
+    "google"
+  ],
   "apache.druid": [
     "apache.hive"
   ],
