@@ -19,7 +19,6 @@
 import functools
 import json
 import re
-import select
 import shlex
 import subprocess
 import textwrap
@@ -33,6 +32,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Set
 from googleapiclient.discovery import build
 
 from airflow.exceptions import AirflowException
+from airflow.providers.apache.beam.hooks.beam import _BeamRunner
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.python_virtualenv import prepare_virtualenv
@@ -484,98 +484,6 @@ class _DataflowJobsController(LoggingMixin):
             self.log.info("No jobs to cancel")
 
 
-class _DataflowRunner(LoggingMixin):
-    def __init__(
-        self,
-        cmd: List[str],
-        on_new_job_id_callback: Optional[Callable[[str], None]] = None,
-    ) -> None:
-        super().__init__()
-        self.log.info("Running command: %s", " ".join(shlex.quote(c) for c in cmd))
-        self.on_new_job_id_callback = on_new_job_id_callback
-        self.job_id: Optional[str] = None
-        self._proc = subprocess.Popen(
-            cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            close_fds=True,
-        )
-
-    def _process_fd(self, fd):
-        """
-        Prints output to logs and lookup for job ID in each line.
-
-        :param fd: File descriptor.
-        """
-        if fd == self._proc.stderr:
-            while True:
-                line = self._proc.stderr.readline().decode()
-                if not line:
-                    return
-                self._process_line_and_extract_job_id(line)
-                self.log.warning(line.rstrip("\n"))
-
-        if fd == self._proc.stdout:
-            while True:
-                line = self._proc.stdout.readline().decode()
-                if not line:
-                    return
-                self._process_line_and_extract_job_id(line)
-                self.log.info(line.rstrip("\n"))
-
-        raise Exception("No data in stderr or in stdout.")
-
-    def _process_line_and_extract_job_id(self, line: str) -> None:
-        """
-        Extracts job_id.
-
-        :param line: URL from which job_id has to be extracted
-        :type line: str
-        """
-        # Job id info: https://goo.gl/SE29y9.
-        matched_job = JOB_ID_PATTERN.search(line)
-        if matched_job:
-            job_id = matched_job.group("job_id_java") or matched_job.group("job_id_python")
-            self.log.info("Found Job ID: %s", job_id)
-            self.job_id = job_id
-            if self.on_new_job_id_callback:
-                self.on_new_job_id_callback(job_id)
-
-    def wait_for_done(self) -> Optional[str]:
-        """
-        Waits for Dataflow job to complete.
-
-        :return: Job id
-        :rtype: Optional[str]
-        """
-        self.log.info("Start waiting for DataFlow process to complete.")
-        self.job_id = None
-        reads = [self._proc.stderr, self._proc.stdout]
-        while True:
-            # Wait for at least one available fd.
-            readable_fds, _, _ = select.select(reads, [], [], 5)
-            if readable_fds is None:
-                self.log.info("Waiting for DataFlow process to complete.")
-                continue
-
-            for readable_fd in readable_fds:
-                self._process_fd(readable_fd)
-
-            if self._proc.poll() is not None:
-                break
-
-        # Corner case: check if more output was created between the last read and the process termination
-        for readable_fd in reads:
-            self._process_fd(readable_fd)
-
-        self.log.info("Process exited with return code: %s", self._proc.returncode)
-
-        if self._proc.returncode != 0:
-            raise Exception(f"DataFlow failed with return code {self._proc.returncode}")
-        return self.job_id
-
-
 class DataflowHook(GoogleBaseHook):
     """
     Hook for Google Dataflow.
@@ -598,6 +506,7 @@ class DataflowHook(GoogleBaseHook):
         self.drain_pipeline = drain_pipeline
         self.cancel_timeout = cancel_timeout
         self.wait_until_finished = wait_until_finished
+        self.job_id: Optional[str] = None
         super().__init__(
             gcp_conn_id=gcp_conn_id,
             delegate_to=delegate_to,
@@ -608,6 +517,32 @@ class DataflowHook(GoogleBaseHook):
         """Returns a Google Cloud Dataflow service object."""
         http_authorized = self._authorize()
         return build("dataflow", "v1b3", http=http_authorized, cache_discovery=False)
+
+    def process_line_and_extract_job_id_callback(
+        self, on_new_job_id_callback: Optional[Callable[[str], None]]
+    ) -> None:
+        """
+        Extracts job_id.
+
+        :param on_new_job_id_callback:
+        :type on_new_job_id_callback: callback
+        """
+
+        def _process_line_and_extract_job_id(
+            line: str, on_new_job_id_callback: Optional[Callable[[str], None]]
+        ) -> None:
+            # Job id info: https://goo.gl/SE29y9.
+            matched_job = JOB_ID_PATTERN.search(line)
+            if matched_job:
+                job_id = matched_job.group("job_id_java") or matched_job.group("job_id_python")
+                self.job_id = job_id
+                if on_new_job_id_callback:
+                    on_new_job_id_callback(job_id)
+
+        def wrap(line: str):
+            return _process_line_and_extract_job_id(line, on_new_job_id_callback)
+
+        return wrap
 
     @GoogleBaseHook.provide_gcp_credential_file
     def _start_dataflow(
@@ -626,7 +561,10 @@ class DataflowHook(GoogleBaseHook):
         ]
         if variables:
             cmd.extend(self._options_to_args(variables))
-        runner = _DataflowRunner(cmd=cmd, on_new_job_id_callback=on_new_job_id_callback)
+        runner = _BeamRunner(
+            cmd=cmd,
+            process_line_callback=self.process_line_and_extract_job_id_callback(on_new_job_id_callback),
+        )
         job_id = runner.wait_for_done()
         job_controller = _DataflowJobsController(
             dataflow=self.get_conn(),

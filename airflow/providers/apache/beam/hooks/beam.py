@@ -22,7 +22,7 @@ import shlex
 import subprocess
 import textwrap
 from tempfile import TemporaryDirectory
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
@@ -34,9 +34,12 @@ class _BeamRunner(LoggingMixin):
     def __init__(
         self,
         cmd: List[str],
+        process_line_callback: Optional[Callable[[str], None]] = None,
     ) -> None:
         super().__init__()
         self.log.info("Running command: %s", " ".join(shlex.quote(c) for c in cmd))
+        self.process_line_callback = process_line_callback
+        self.job_id: Optional[str] = None
         self._proc = subprocess.Popen(
             cmd,
             shell=False,
@@ -56,6 +59,8 @@ class _BeamRunner(LoggingMixin):
                 line = self._proc.stderr.readline().decode()
                 if not line:
                     return
+                if self.process_line_callback:
+                    self.process_line_callback(line)
                 self.log.warning(line.rstrip("\n"))
 
         if fd == self._proc.stdout:
@@ -67,9 +72,15 @@ class _BeamRunner(LoggingMixin):
 
         raise Exception("No data in stderr or in stdout.")
 
-    def wait_for_done(self) -> None:
-        """Waits for Apache Beam pipeline to complete."""
+    def wait_for_done(self) -> Optional[str]:
+        """
+        Waits for Apache Beam pipeline to complete.
+
+        :return: Job id
+        :rtype: Optional[str]
+        """
         self.log.info("Start waiting for Apache Beam process to complete.")
+        self.job_id = None
         reads = [self._proc.stderr, self._proc.stdout]
         while True:
             # Wait for at least one available fd.
@@ -92,6 +103,8 @@ class _BeamRunner(LoggingMixin):
 
         if self._proc.returncode != 0:
             raise Exception(f"Apache Beam process failed with return code {self._proc.returncode}")
+
+        return self.job_id
 
 
 class BeamHook(BaseHook):
