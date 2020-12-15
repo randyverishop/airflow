@@ -30,7 +30,43 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.python_virtualenv import prepare_virtualenv
 
 
-class _BeamRunner(LoggingMixin):
+def beam_options_to_args(options: dict) -> List[str]:
+    """
+    Returns a PipelineOptions from a dictionary of arguments
+
+    The logic of this method should be compatible with Apache Beam:
+    https://github.com/apache/beam/blob/b56740f0e8cd80c2873412847d0b336837429fb9/sdks/python/
+    apache_beam/options/pipeline_options.py#L230-L251
+
+    :param options: Variables to be
+    :type options: dict
+    :return
+    """
+    if not options:
+        return []
+
+    args: List[str] = []
+    for attr, value in options.items():
+        if value is None or (isinstance(value, bool) and value):
+            args.append(f"--{attr}")
+        elif isinstance(value, list):
+            args.extend([f"--{attr}={v}" for v in value])
+        else:
+            args.append(f"--{attr}={value}")
+    return args
+
+
+class BeamCommandRunner(LoggingMixin):
+    """
+    Class responsible for running pipeline command in subprocess
+
+    :param cmd: Parts of the command to be run in subprocess
+    :type cmd: List[str]
+    :param process_line_callback: Optional callback which can be used to process
+        stdout and stderr to detect job id
+    :type process_line_callback: Optional[Callable[[str], None]]
+    """
+
     def __init__(
         self,
         cmd: List[str],
@@ -68,6 +104,8 @@ class _BeamRunner(LoggingMixin):
                 line = self._proc.stdout.readline().decode()
                 if not line:
                     return
+                if self.process_line_callback:
+                    self.process_line_callback(line)
                 self.log.info(line.rstrip("\n"))
 
         raise Exception("No data in stderr or in stdout.")
@@ -131,25 +169,8 @@ class BeamHook(BaseHook):
             f"--runner={self.runner}",
         ]
         if variables:
-            cmd.extend(self._options_to_args(variables))
-        _BeamRunner(cmd=cmd).wait_for_done()
-
-    @staticmethod
-    def _options_to_args(variables: dict) -> List[str]:
-        if not variables:
-            return []
-        # The logic of this method should be compatible with Apache Beam:
-        # https://github.com/apache/beam/blob/b56740f0e8cd80c2873412847d0b336837429fb9/sdks/python/
-        # apache_beam/options/pipeline_options.py#L230-L251
-        args: List[str] = []
-        for attr, value in variables.items():
-            if value is None or (isinstance(value, bool) and value):
-                args.append(f"--{attr}")
-            elif isinstance(value, list):
-                args.extend([f"--{attr}={v}" for v in value])
-            else:
-                args.append(f"--{attr}={value}")
-        return args
+            cmd.extend(beam_options_to_args(variables))
+        BeamCommandRunner(cmd=cmd).wait_for_done()
 
     def start_python_pipeline(  # pylint: disable=too-many-arguments
         self,

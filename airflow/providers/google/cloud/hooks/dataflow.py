@@ -32,7 +32,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Set
 from googleapiclient.discovery import build
 
 from airflow.exceptions import AirflowException
-from airflow.providers.apache.beam.hooks.beam import _BeamRunner
+from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, beam_options_to_args
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.python_virtualenv import prepare_virtualenv
@@ -560,12 +560,12 @@ class DataflowHook(GoogleBaseHook):
             f"--project={project_id}",
         ]
         if variables:
-            cmd.extend(self._options_to_args(variables))
-        runner = _BeamRunner(
+            cmd.extend(beam_options_to_args(variables))
+        cmd_runner = BeamCommandRunner(
             cmd=cmd,
             process_line_callback=self.process_line_and_extract_job_id_callback(on_new_job_id_callback),
         )
-        job_id = runner.wait_for_done()
+        job_id = cmd_runner.wait_for_done()
         job_controller = _DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
@@ -927,23 +927,6 @@ class DataflowHook(GoogleBaseHook):
 
         return safe_job_name
 
-    @staticmethod
-    def _options_to_args(variables: dict) -> List[str]:
-        if not variables:
-            return []
-        # The logic of this method should be compatible with Apache Beam:
-        # https://github.com/apache/beam/blob/b56740f0e8cd80c2873412847d0b336837429fb9/sdks/python/
-        # apache_beam/options/pipeline_options.py#L230-L251
-        args: List[str] = []
-        for attr, value in variables.items():
-            if value is None or (isinstance(value, bool) and value):
-                args.append(f"--{attr}")
-            elif isinstance(value, list):
-                args.extend([f"--{attr}={v}" for v in value])
-            else:
-                args.append(f"--{attr}={value}")
-        return args
-
     @_fallback_to_location_from_variables
     @_fallback_to_project_id_from_variables
     @GoogleBaseHook.fallback_to_default_project_id
@@ -1063,7 +1046,7 @@ class DataflowHook(GoogleBaseHook):
             "--format=value(job.id)",
             f"--job-name={job_name}",
             f"--region={location}",
-            *(self._options_to_args(options)),
+            *(beam_options_to_args(options)),
         ]
         self.log.info("Executing command: %s", " ".join([shlex.quote(c) for c in cmd]))
         with self.provide_authorized_gcloud():
