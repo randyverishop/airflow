@@ -32,7 +32,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Set
 from googleapiclient.discovery import build
 
 from airflow.exceptions import AirflowException
-from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, beam_options_to_args
+from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, BeamHook, beam_options_to_args
 from airflow.providers.google.common.hooks.base_google import GoogleBaseHook
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.python_virtualenv import prepare_virtualenv
@@ -131,7 +131,7 @@ class DataflowJobType:
     JOB_TYPE_STREAMING = "JOB_TYPE_STREAMING"
 
 
-class _DataflowJobsController(LoggingMixin):
+class DataflowJobsController(LoggingMixin):
     """
     Interface for communication with Google API.
 
@@ -507,6 +507,7 @@ class DataflowHook(GoogleBaseHook):
         self.cancel_timeout = cancel_timeout
         self.wait_until_finished = wait_until_finished
         self.job_id: Optional[str] = None
+        self.beam_hook = BeamHook("DataflowRunner")
         super().__init__(
             gcp_conn_id=gcp_conn_id,
             delegate_to=delegate_to,
@@ -556,7 +557,6 @@ class DataflowHook(GoogleBaseHook):
         location: str = DEFAULT_DATAFLOW_LOCATION,
     ) -> None:
         cmd = command_prefix + [
-            "--runner=DataflowRunner",
             f"--project={project_id}",
         ]
         if variables:
@@ -566,7 +566,7 @@ class DataflowHook(GoogleBaseHook):
             process_line_callback=self.process_line_and_extract_job_id_callback(on_new_job_id_callback),
         )
         job_id = cmd_runner.wait_for_done()
-        job_controller = _DataflowJobsController(
+        job_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             name=name,
@@ -742,7 +742,7 @@ class DataflowHook(GoogleBaseHook):
         if on_new_job_id_callback:
             on_new_job_id_callback(job_id)
 
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             name=name,
@@ -790,7 +790,7 @@ class DataflowHook(GoogleBaseHook):
         if on_new_job_id_callback:
             on_new_job_id_callback(job_id)
 
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             job_id=job_id,
@@ -863,51 +863,25 @@ class DataflowHook(GoogleBaseHook):
         variables["job_name"] = name
         variables["region"] = location
 
-        if "labels" in variables:
-            variables["labels"] = [f"{key}={value}" for key, value in variables["labels"].items()]
-
-        if py_requirements is not None:
-            if not py_requirements and not py_system_site_packages:
-                warning_invalid_environment = textwrap.dedent(
-                    """\
-                    Invalid method invocation. You have disabled inclusion of system packages and empty list
-                    required for installation, so it is not possible to create a valid virtual environment.
-                    In the virtual environment, apache-beam package must be installed for your job to be \
-                    executed. To fix this problem:
-                    * install apache-beam on the system, then set parameter py_system_site_packages to True,
-                    * add apache-beam to the list of required packages in parameter py_requirements.
-                    """
-                )
-                raise AirflowException(warning_invalid_environment)
-
-            with TemporaryDirectory(prefix="dataflow-venv") as tmp_dir:
-                py_interpreter = prepare_virtualenv(
-                    venv_directory=tmp_dir,
-                    python_bin=py_interpreter,
-                    system_site_packages=py_system_site_packages,
-                    requirements=py_requirements,
-                )
-                command_prefix = [py_interpreter] + py_options + [dataflow]
-
-                self._start_dataflow(
-                    variables=variables,
-                    name=name,
-                    command_prefix=command_prefix,
-                    project_id=project_id,
-                    on_new_job_id_callback=on_new_job_id_callback,
-                    location=location,
-                )
-        else:
-            command_prefix = [py_interpreter] + py_options + [dataflow]
-
-            self._start_dataflow(
-                variables=variables,
-                name=name,
-                command_prefix=command_prefix,
-                project_id=project_id,
-                on_new_job_id_callback=on_new_job_id_callback,
-                location=location,
-            )
+        self.beam_hook.start_python_pipeline(
+            variables=variables,
+            py_file=dataflow,
+            py_options=py_options,
+            py_interpreter=py_interpreter,
+            py_requirements=py_requirements,
+            py_system_site_packages=py_system_site_packages,
+            process_line_callback=self.process_line_and_extract_job_id_callback(on_new_job_id_callback),
+            dataflow_connection=self.get_conn(),
+            dataflow_project_number=project_id,
+            dataflow_location=location,
+            dataflow_poll_sleep=self.poll_sleep,
+            dataflow_name=name,
+            dataflow_num_retries=self.num_retries,
+            dataflow_multiple_jobs=False,
+            dataflow_drain_pipeline=self.drain_pipeline,
+            dataflow_cancel_timeout=self.cancel_timeout,
+            dataflow_wait_until_finished=self.wait_until_finished,
+        )
 
     @staticmethod
     def _build_dataflow_job_name(job_name: str, append_job_name: bool = True) -> str:
@@ -957,7 +931,7 @@ class DataflowHook(GoogleBaseHook):
                 DeprecationWarning,
                 stacklevel=4,
             )
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             name=name,
@@ -992,7 +966,7 @@ class DataflowHook(GoogleBaseHook):
             If set to None or missing, the default project_id from the Google Cloud connection is used.
         :type project_id:
         """
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             name=job_name,
@@ -1064,7 +1038,7 @@ class DataflowHook(GoogleBaseHook):
         if on_new_job_id_callback:
             on_new_job_id_callback(job_id)
 
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             job_id=job_id,
@@ -1097,7 +1071,7 @@ class DataflowHook(GoogleBaseHook):
         :return: the Job
         :rtype: dict
         """
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             location=location,
@@ -1125,7 +1099,7 @@ class DataflowHook(GoogleBaseHook):
             https://cloud.google.com/dataflow/docs/reference/rest/v1b3/JobMetrics
         :rtype: dict
         """
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             location=location,
@@ -1153,7 +1127,7 @@ class DataflowHook(GoogleBaseHook):
             https://cloud.google.com/dataflow/docs/reference/rest/v1b3/ListJobMessagesResponse#JobMessage
         :rtype: List[dict]
         """
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             location=location,
@@ -1181,7 +1155,7 @@ class DataflowHook(GoogleBaseHook):
             https://cloud.google.com/dataflow/docs/reference/rest/v1b3/ListJobMessagesResponse#autoscalingevent
         :rtype: List[dict]
         """
-        jobs_controller = _DataflowJobsController(
+        jobs_controller = DataflowJobsController(
             dataflow=self.get_conn(),
             project_number=project_id,
             location=location,

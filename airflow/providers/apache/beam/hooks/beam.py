@@ -22,7 +22,7 @@ import shlex
 import subprocess
 import textwrap
 from tempfile import TemporaryDirectory
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
@@ -164,13 +164,47 @@ class BeamHook(BaseHook):
         self,
         variables: dict,
         command_prefix: List[str],
-    ) -> None:
+        process_line_callback: Optional[Callable[[str], None]] = None,
+        dataflow_connection: Optional[Any] = None,
+        dataflow_project_number: Optional[str] = None,
+        dataflow_location: Optional[str] = None,
+        dataflow_poll_sleep: int = 10,
+        dataflow_name: Optional[str] = None,
+        dataflow_num_retries: int = 0,
+        dataflow_multiple_jobs: bool = False,
+        dataflow_drain_pipeline: bool = False,
+        dataflow_cancel_timeout: Optional[int] = 5 * 60,
+        dataflow_wait_until_finished: Optional[bool] = None,
+    ) -> Optional[str]:
         cmd = command_prefix + [
             f"--runner={self.runner}",
         ]
+        if dataflow_project_number:
+            cmd.append(f"--project={dataflow_project_number}")
         if variables:
             cmd.extend(beam_options_to_args(variables))
-        BeamCommandRunner(cmd=cmd).wait_for_done()
+        cmd_runner = BeamCommandRunner(
+            cmd=cmd,
+            process_line_callback=process_line_callback,
+        )
+        job_id = cmd_runner.wait_for_done()
+        if self.runner == "DataflowRunner":
+            from airflow.providers.google.cloud.hooks.dataflow import DataflowJobsController
+
+            job_controller = DataflowJobsController(
+                dataflow=dataflow_connection,
+                project_number=dataflow_project_number,
+                name=dataflow_name,
+                location=dataflow_location,
+                poll_sleep=dataflow_poll_sleep,
+                job_id=job_id,
+                num_retries=dataflow_num_retries,
+                multiple_jobs=dataflow_multiple_jobs,
+                drain_pipeline=dataflow_drain_pipeline,
+                cancel_timeout=dataflow_cancel_timeout,
+                wait_until_finished=dataflow_wait_until_finished,
+            )
+            job_controller.wait_for_done()
 
     def start_python_pipeline(  # pylint: disable=too-many-arguments
         self,
@@ -180,6 +214,17 @@ class BeamHook(BaseHook):
         py_interpreter: str = "python3",
         py_requirements: Optional[List[str]] = None,
         py_system_site_packages: bool = False,
+        process_line_callback: Optional[Callable[[str], None]] = None,
+        dataflow_connection: Optional[Any] = None,
+        dataflow_project_number: Optional[str] = None,
+        dataflow_location: Optional[str] = None,
+        dataflow_poll_sleep: int = 10,
+        dataflow_name: Optional[str] = None,
+        dataflow_num_retries: int = 0,
+        dataflow_multiple_jobs: bool = False,
+        dataflow_drain_pipeline: bool = False,
+        dataflow_cancel_timeout: Optional[int] = 5 * 60,
+        dataflow_wait_until_finished: Optional[bool] = None,
     ):
         """
         Starts Apache Beam python pipeline.
@@ -234,6 +279,17 @@ class BeamHook(BaseHook):
                 self._start_pipeline(
                     variables=variables,
                     command_prefix=command_prefix,
+                    process_line_callback=process_line_callback,
+                    dataflow_connection=dataflow_connection,
+                    dataflow_project_number=dataflow_project_number,
+                    dataflow_location=dataflow_location,
+                    dataflow_poll_sleep=dataflow_poll_sleep,
+                    dataflow_name=dataflow_name,
+                    dataflow_num_retries=dataflow_num_retries,
+                    dataflow_multiple_jobs=dataflow_multiple_jobs,
+                    dataflow_drain_pipeline=dataflow_drain_pipeline,
+                    dataflow_cancel_timeout=dataflow_cancel_timeout,
+                    dataflow_wait_until_finished=dataflow_wait_until_finished,
                 )
         else:
             command_prefix = [py_interpreter] + py_options + [py_file]
@@ -241,6 +297,17 @@ class BeamHook(BaseHook):
             self._start_pipeline(
                 variables=variables,
                 command_prefix=command_prefix,
+                process_line_callback=process_line_callback,
+                dataflow_connection=dataflow_connection,
+                dataflow_project_number=dataflow_project_number,
+                dataflow_location=dataflow_location,
+                dataflow_poll_sleep=dataflow_poll_sleep,
+                dataflow_name=dataflow_name,
+                dataflow_num_retries=dataflow_num_retries,
+                dataflow_multiple_jobs=dataflow_multiple_jobs,
+                dataflow_drain_pipeline=dataflow_drain_pipeline,
+                dataflow_cancel_timeout=dataflow_cancel_timeout,
+                dataflow_wait_until_finished=dataflow_wait_until_finished,
             )
 
     def start_java_pipeline(
